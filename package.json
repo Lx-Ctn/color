@@ -1,0 +1,20 @@
+{
+	"name": "color",
+	"version": "0.1.0",
+	"description": "Color is a api to easily handle color variation to create dynamic color theme.",
+	"main": "Color.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "comming soon"
+	},
+	"keywords": [
+		"color",
+		"dynamic",
+		"theme"
+	],
+	"author": "Alexandre Cottin (Lx Ctn)",
+	"license": "MIT"
+}
