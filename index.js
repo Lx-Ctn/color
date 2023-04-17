@@ -15,7 +15,7 @@
  * Les propriétés Offset permettent un décalage dynamique avec la valeur de référence.
  * => Idéal pour la gestion dynamique de thème de couleurs
  *
- * @param	{Color|string|number}	ColorOrValue - Set values (from a other Color or a CSS color string) or set hue from number
+ * @param	{Color|string|number} [ColorOrValue=0] - Set values (from a other Color or a CSS color string) or set hue from number (optional - 0 by default - 0° Hue get a pure red color)
  * @param	{number}	[saturation=100] - Set the saturation value (optional - 100% by default)
  * @param	{number}	[light=50]	- Set the light value (optional - 50% by default)
  * @param	{number}	[alpha=100] - Set the alpha value (optional - 100% by default)
@@ -23,12 +23,17 @@
 
 /*
 	TODO:
-	- gestion des notations racourcies "#fff" -> "#ffffff" && "#ffff" -> "#ffffffff"
-	- gestion des autres notations CSS rgb & hsl (% & /1)
-	- export to # et rgb
-
-
-*/
+	- feat : gestion des notations racourcies "#fff" -> "#ffffff" && "#ffff" -> "#ffffffff"
+	- feat : gestion des autres notations CSS rgb & hsl (% & /1)
+	- feat : export to # et rgb
+	- feat : création de "helpers" / ex: helper shadow = sat / 2 && light - 40% && alpha / 2  => shadows + color = shadowColor
+	- fix : double approximation avec toHex qui call hslToRgb qui cdéjà call Math.round()
+	- feat : method that export the status of the color (values, offset, hasReference) for debbug reason
+	- fix : if parameter = null ?
+	- feat : easy dark/light theme integration ?
+	- feat : add a remove method to reset fixed properties
+	- fix : callback offset must return a number : throw error.
+	*/
 class Color {
 	#colorReference;
 	#hue;
@@ -38,7 +43,7 @@ class Color {
 	// Les paramètres sont protégés pour assurer les valeurs min et max (propriétés de 0 à 100%)
 	// Ainsi que la rotation sur la roue chromatique
 
-	constructor(ColorOrValue, saturation = 100, light = 50, alpha = 100) {
+	constructor(ColorOrValue = 0, saturation = 100, light = 50, alpha = 100) {
 		// init :
 		this.hueOffset = 0;
 		this.saturationOffset = 0;
@@ -119,6 +124,22 @@ class Color {
 			? `hsl(${this.hue}, ${this.saturation}%, ${this.light}%)`
 			: `hsla(${this.hue}, ${this.saturation}%, ${this.light}%, ${this.alpha}%)`;
 	}
+	toRgb() {
+		const [red, green, blue] = hslToRgb(this.hue, this.saturation, this.light);
+		return this.alpha === 100
+			? `rgb(${red}, ${green}, ${blue})`
+			: `rgba(${red}, ${green}, ${blue}, ${this.alpha / 100})`;
+	}
+	toHex() {
+		const getHex = value => {
+			const hex = value.toString(16);
+			return hex.length < 2 ? hex.padStart(2, "0") : hex; // need "00" instead of "0"
+		};
+		const [red, green, blue] = hslToRgb(this.hue, this.saturation, this.light).map(value => getHex(value));
+		const alpha = getHex(Math.round((this.alpha * 255) / 100));
+		console.log({ red, green, blue, alpha });
+		return this.alpha === 100 ? `#${red}${green}${blue}` : `#${red}${green}${blue}${alpha}`;
+	}
 }
 export default Color;
 /*
@@ -128,7 +149,7 @@ export default Color;
 
 
 */ // Allow every argument but export the right HSL value :
-const getFormatedHue = hue => (hue > 360 ? hue % 360 : hue < 0 ? (hue % 360) + 360 : hue);
+const getFormatedHue = hue => (hue >= 360 ? hue % 360 : hue < 0 ? (hue % 360) + 360 : hue);
 const getFormatedValue = value => (value > 100 ? 100 : value < 0 ? 0 : value);
 
 // Converts string to values :
@@ -141,8 +162,8 @@ const hexToValue = stringColor => {
 };
 
 /**
- * Converts an RGB color value to HSL. Conversion formula
- * adapted from https://gist.github.com/mjackson/5311256
+ * Converts an RGB color value to HSL.
+ * Conversion formula adapted from https://gist.github.com/mjackson/5311256
  */
 const rgbToHsl = ({ red, green, blue, alpha = 255 }) => {
 	red /= 255;
@@ -179,9 +200,44 @@ const rgbToHsl = ({ red, green, blue, alpha = 255 }) => {
 		hue /= 6;
 	}
 
-	hue *= 360;
-	saturation *= 100;
-	light *= 100;
-	alpha *= 100;
+	hue = Math.round(hue * 360);
+	saturation = Math.round(saturation * 100);
+	light = Math.round(light * 100);
+	alpha = Math.round(alpha * 100);
 	return { hue, saturation, light, alpha };
+};
+
+/**
+ * Convert an HSL color value to RGB.
+ * Conversion formula adapted from https://gist.github.com/mjackson/5311256
+ */
+const hslToRgb = (hue, saturation, light) => {
+	hue /= 360;
+	saturation /= 100;
+	light /= 100;
+
+	let red, green, blue;
+
+	if (saturation == 0) {
+		red = green = blue = light; // achromatic
+	} else {
+		function hueToRgb(p, q, t) {
+			if (t < 0) t += 1;
+			if (t > 1) t -= 1;
+			if (t < 1 / 6) return p + (q - p) * 6 * t;
+			if (t < 3 / 6) return q;
+			if (t < 4 / 6) return p + (q - p) * (2 / 3 - t) * 6;
+			return p;
+		}
+
+		const q = light < 0.5 ? light * (1 + saturation) : light + saturation - light * saturation;
+		const p = 2 * light - q;
+
+		red = Math.round(hueToRgb(p, q, hue + 2 / 6) * 255);
+		green = Math.round(hueToRgb(p, q, hue) * 255);
+		blue = Math.round(hueToRgb(p, q, hue - 2 / 6) * 255);
+		console.log({ red, green, blue });
+	}
+
+	return [red, green, blue];
 };

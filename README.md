@@ -11,24 +11,27 @@
 > A single object parameter will allow to have named arguments for a better developper experience.
 
 <br>
-
--  [Introduction](#introduction)
--  [In short](#in-short)
--  <details><summary><a href="#for-those-who-arent-familiar-with-color-theory">Brief introduction to color theory</a></summary>
-   <ul>
-     <li><a href="#colors-properties">Colors properties</a></li>
-     <li><a href="#color-values">Color values</a></li>
-     <li><a href="#color-harmonies">Colors harmonies</a></li>
-     <li><a href="#the-hsl-solution">The HSL solution</a></li>
-   </ul></details>
-
--  [The Color API](#the-color-object)
-   -  [Creation of a Color](#create-a-color)
-   -  [Creation of a child Color](#create-a-child-color)
-   -  [Value modification]()
-   -  [Offset modification]()
-   -  [Methods]()
--  [Exemples]()
+<ul>
+   <li><a href="#introduction-">Introduction</a></li>
+   <li><a href="#in-short-">In short</a></li>
+   <li><a href="#for-those-who-arent-familiar-with-color-theory-">Brief introduction to color theory</a>
+      <ul>
+      <li><a href="#color-properties-">Color properties</a></li>
+      <li><a href="#color-value-">Color value</a></li>
+      <li><a href="#color-harmonies-">Colors harmonies</a></li>
+      <li><a href="#the-hsl-solution-">The HSL solution</a></li>
+      </ul>
+   </li>
+   <li><a href="#the-color-object-">The Color API</a></li>
+      <ul>
+      <li><a href="#create-a-color-">Creation of a Color</a></li>
+      <li><a href="#create-a-child-color-">Creation of a child Color</a></li>
+      <li><a href="#constructor-parameters-">Constructor parameters</a></li>
+      <li><a href="#properties-">Properties</a></li>
+      <li><a href="#methods-">Methods</a></li>
+      </ul>
+   <!--<li><a href="#exemples-">Exemples</a></li>-->
+</ul>
 
 ---
 
@@ -37,7 +40,7 @@
 ## Introduction :
 
 `Color` allows to easily handle color manipulation with access to each aspect of it (hue, saturation, light, alpha).
-For exemple, you can dynamically set [_tint_, _tone_ and _shade_](#for-those-who-arent-familiar-with-color-theory) of a color by changing only the `saturation` or `light` properties.
+For exemple, you can dynamically set [_tint_, _tone_ and _shade_](#for-those-who-arent-familiar-with-color-theory-) of a color by changing only the `saturation` or `light` properties.
 
 A main `Color` can be a reference, linked by a other `Color` with some offset in `saturation` for exemple.
 That allows you to create a dynamic color theme through a set of linked `Color` which will adapt to any change from the main one.
@@ -96,13 +99,16 @@ shadowColor.toHsl(); // "hsla(30, 45%, 30%, 30%)"
 
 ## For those who aren't familiar with color theory :
 
-<figure align="center">
+<div align="center"><figure>
 <img src="./assets/colorWheel.png" width="150" alt="The color wheel" title="The color wheel">
 <figcaption><h6><i>The color wheel.</i></h6></figcaption>
-</figure>
+</figure></div>
 
 <br>
+<br>
+
 ### Color properties :
+
 Colors can be describe by 3 properties : <i>Hue</i>, <i>intensity</i> and <i>value</i>.
 
 <br><dl>
@@ -157,7 +163,7 @@ Toned colors are generally considered more pleasing to the eye. They are complex
 <br>
 <br>
 
-### Color Harmony :
+### Color harmonies :
 
 Harmonies are the combination of colors in an aesthetically pleasing way.
 Here are 7 color schemes to help you choose colors that go well together, to make your design look natural and professional.
@@ -258,26 +264,6 @@ This is how we get <i>tone</i> variation.
 <br>
 
 ## The Color API :
-
-<br>
-
-détails de l'API :
-
--  création d'une color parente :
-   -  détail des parametres
-   -  valeur par défaut
-   -  css hex en parametre
--  création d'une couleur enfant :
-   -  detail des parametre offset
-   -  valeur par défaut
-   -  possibilité callback
--  modification valeur direct :
-   -  Sur Color parente : modification.
-   -  Sur Color enfant : fixe la valeur : ne prend plus en compte la veleur parente pour cette propriété
--  modification d'un offset :
-   -  Sur Color parente : aucun effet
-   -  Sur Color enfant : modification.
--  methodes :
 
 <br>
 
@@ -412,23 +398,26 @@ This value will be fixed, independent of the reference value.
 <h6 align="right"><a href="#top"> back to top ⇧</a></h6>
 <br>
 
-### Contructor parameters :
+### Constructor parameters :
+
+<br>
 
 <dl>
-<code><b>Color</b></code> (Optional)
+<code><b>Color</b></code> <i>(Optional)</i>
 <dd><dl><dd>The 1<sup>st</sup> parameter accept 3 types of value :
 
 -  **_Hue_** : A number for the color position on the color wheel.
    It will still work if the number is outside the usual position (between 0 and 360°).
-   For exemple `-120` will have the same result as `240` (-120 + 360 = 240 : same position on the wheel).
+   > For exemple `-120` will have the same result as `240` (-120 + 360 = 240 : same position on the wheel).
 -  **_CSS color string_** : A string with a 6 or 8 (with alpha) hexadecimal color format that will determine the _hue_, _saturation_, _light_ and _alpha_ values.
 -  **_Color object_** : An other Color object can be passed, to be the reference on which this new Color will be based.
 All next parameters become _offset_ to shift from this reference.
 </dd></dl></dd>
 </dl>
+<br>
 
 <dl>
-<code><b>Saturation</b></code> (Optional)
+<code><b>Saturation</b></code> <i>(Optional)</i>
 <dd><dl><dd>The 2<sup>nd</sup> parameter set the <i>saturation</i> value or offset :
 
 -  If the 1<sup>st</sup> parameter is a _hue_ value : this one will set the _saturation_ **value** ( `100` by default : Pure color ).
@@ -436,9 +425,10 @@ All next parameters become _offset_ to shift from this reference.
 -  If the 1<sup>st</sup> parameter is a _CSS color string_ : this one will be **ignored**.
 </dd></dl></dd>
 </dl>
+<br>
 
 <dl>
-<code><b>Light</b></code> (Optional)
+<code><b>Light</b></code> <i>(Optional)</i>
 <dd><dl><dd>The 3<sup>rd</sup> parameter set the <i>light</i> value or offset :
 
 -  If the 1<sup>st</sup> parameter is a _hue_ value : this one will set the _light_ **value** ( `50` by default: Pure color ).
@@ -446,9 +436,10 @@ All next parameters become _offset_ to shift from this reference.
 -  If the 1<sup>st</sup> parameter is a _CSS color string_ : this one will be **ignored**.
 </dd></dl></dd>
 </dl>
+<br>
 
 <dl>
-<code><b>Aplha</b></code> (Optional)
+<code><b>Aplha</b></code> <i>(Optional)</i>
 <dd><dl><dd>The 4<sup>th</sup> parameter set the <i>alpha</i> (transparency) value or offset :
 
 -  If the 1<sup>st</sup> parameter is a _hue_ value : this one will set the _alpha_ **value** ( `100` by default : No transparency ).
@@ -462,6 +453,8 @@ All next parameters become _offset_ to shift from this reference.
 <br>
 
 ### Properties :
+
+<br>
 
 <dl>
 <code><b>Color.hue</b></code>
@@ -478,6 +471,7 @@ All next parameters become _offset_ to shift from this reference.
 
 </dd></dl></dd>
 </dl>
+<br>
 
 <dl>
 <code><b>Color.saturation</b></code>
@@ -494,6 +488,7 @@ All next parameters become _offset_ to shift from this reference.
    If this value is set on a child <code>Color</code>, the parent saturation value will be ignored.
    </dd></dl></dd>
    </dl>
+   <br>
 
 <dl>
 <code><b>Color.light</b></code>
@@ -510,6 +505,7 @@ All next parameters become _offset_ to shift from this reference.
    If this value is set on a child <code>Color</code>, the parent light value will be ignored.
    </dd></dl></dd>
    </dl>
+   <br>
 
 <dl>
 <code><b>Color.alpha</b></code>
@@ -526,6 +522,7 @@ All next parameters become _offset_ to shift from this reference.
    If this value is set on a child <code>Color</code>, the parent alpha value will be ignored.
    </dd></dl></dd>
    </dl>
+   <br>
 
 <dl>
 <code><b>Color.hueOffset</b></code>
@@ -539,6 +536,7 @@ All next parameters become _offset_ to shift from this reference.
    -  If `hueOffset` is a _function_, the `Parent.hue` value will be given as parameter, and the function must return the wanted `hue` value.
    </dd></dl></dd>
    </dl>
+   <br>
 
 <dl>
 <code><b>Color.saturationOffset</b></code>
@@ -552,6 +550,7 @@ All next parameters become _offset_ to shift from this reference.
    -  If `saturationOffset` is a _function_, the `Parent.saturation` value will be given as parameter, and the function must return the wanted `saturation` value.
    </dd></dl></dd>
    </dl>
+   <br>
 
 <dl>
 <code><b>Color.lightOffset</b></code>
@@ -565,6 +564,7 @@ All next parameters become _offset_ to shift from this reference.
    -  If `lightOffset` is a _function_, the `Parent.light` value will be given as parameter, and the function must return the wanted `light` value.
    </dd></dl></dd>
    </dl>
+   <br>
 
 <dl>
 <code><b>Color.alphaOffset</b></code>
@@ -596,6 +596,32 @@ mainColor.toHsl(); // "hsl(360, 90%, 70%)"
 
 mainColor.alpha = 50;
 mainColor.toHsl(); // "hsla(360, 90%, 70%, 50%)"
+```
+
+<br>
+
+`.toRgb()`
+: Return the RGB value of the color in CSS compatible string.
+
+```js
+const mainColor = new Color(360, 90, 70);
+mainColor.toRgb(); // "rgb(247, 110, 110)"
+
+mainColor.alpha = 50;
+mainColor.toRgb(); // "rgba(247, 110, 110, 0.5)"
+```
+
+<br>
+
+`.toHex()`
+: Return the hexadecimal value of the color in CSS compatible string.
+
+```js
+const mainColor = new Color(360, 90, 70);
+mainColor.toHex(); // "#f76e6e"
+
+mainColor.alpha = 50;
+mainColor.toHex(); // "#f76e6e80"
 ```
 
 <br>
