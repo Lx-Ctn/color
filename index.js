@@ -269,11 +269,14 @@ const hslToRgb = (hue, saturation, light) => {
 		const q = light < 0.5 ? light * (1 + saturation) : light + saturation - light * saturation;
 		const p = 2 * light - q;
 
-		red = Math.round(hueToRgb(p, q, hue + 2 / 6) * 255);
-		green = Math.round(hueToRgb(p, q, hue) * 255);
-		blue = Math.round(hueToRgb(p, q, hue - 2 / 6) * 255);
+		red = hueToRgb(p, q, hue + 2 / 6);
+		green = hueToRgb(p, q, hue);
+		blue = hueToRgb(p, q, hue - 2 / 6);
 	}
 
+	red = Math.round(red * 255);
+	green = Math.round(green * 255);
+	blue = Math.round(blue * 255);
 	return [red, green, blue];
 };
 
