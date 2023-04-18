@@ -1,5 +1,5 @@
 /**
- * Créé un objet couleur au format hsl + alpha optionnel
+ * Create a color object with hsl format + optionnal alpha
  * @class
  *
  * Permet d'intéragir facilement avec la couleur,
@@ -15,7 +15,7 @@
  * Les propriétés Offset permettent un décalage dynamique avec la valeur de référence.
  * => Idéal pour la gestion dynamique de thème de couleurs
  *
- * @param	{Color|string|number} [ColorOrValue=0] - Set values (from a other Color or a CSS color string) or set hue from number (optional - 0 by default - 0° Hue get a pure red color)
+ * @param	{Color|string|number} [color=0] - Set values (from a other Color or a CSS color string) or set hue from number (optional - 0 by default - 0° Hue get a pure red color)
  * @param	{number}	[saturation=100] - Set the saturation value (optional - 100% by default)
  * @param	{number}	[light=50]	- Set the light value (optional - 50% by default)
  * @param	{number}	[alpha=100] - Set the alpha value (optional - 100% by default)
@@ -23,13 +23,13 @@
 
 /*
 	TODO:
-	- feat : gestion des notations racourcies "#fff" -> "#ffffff" && "#ffff" -> "#ffffffff"
 	- feat : gestion des autres notations CSS rgb & hsl (% & /1)
 	- feat : création de "helpers" / ex: helper shadow = sat / 2 && light - 40% && alpha / 2  => shadows + color = shadowColor
 	- feat : method that export the status of the color (values, offset, hasReference) for debbug reason
 	- feat : easy dark/light theme integration ?
 	- feat : add a remove method to reset fixed properties
 	- doc : add useful exemple in the README section
+	- fix : wrong conversion at 0% saturation (from hex or hsl) 
 	*/
 
 const defaultValues = {
@@ -50,7 +50,7 @@ class Color {
 	// And the rotation around the color wheel.
 
 	constructor(
-		ColorOrValue = defaultValues.hue,
+		color = defaultValues.hue,
 		saturation = defaultValues.saturation,
 		light = defaultValues.light,
 		alpha = defaultValues.alpha
@@ -61,18 +61,9 @@ class Color {
 		this.lightOffset = 0;
 		this.alphaOffset = 0;
 
-		// If we get a CSS color value :
-		if (ColorOrValue instanceof String || typeof ColorOrValue === "string") {
-			let colors;
-			if (ColorOrValue.startsWith("#")) {
-				colors = hexToValue(ColorOrValue);
-			} else throw new Error(getErrorMessage.stringArgument);
-			({ hue: ColorOrValue, saturation, light, alpha } = rgbToHsl(colors));
-		}
-
 		// If we get a Color object :
-		if (ColorOrValue instanceof Color) {
-			this.#colorReference = ColorOrValue;
+		if (color instanceof Color) {
+			this.#colorReference = color;
 			switch (arguments.length) {
 				case 4:
 					this.alphaOffset = alpha ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
@@ -83,14 +74,23 @@ class Color {
 				default:
 					break;
 			}
-
-			// If we get a hue number value :
 		} else {
-			for (const index in arguments) {
-				const argument = arguments[index];
-				if (typeof argument !== "number") throw new Error(getErrorMessage.argument(index, argument));
+			// If we get a CSS color value :
+			if (color instanceof String || typeof color === "string") {
+				let rgbaColors;
+				if (color.startsWith("#")) {
+					rgbaColors = hexToValue(color);
+				} else throw new Error(getErrorMessage.stringArgument);
+				({ hue: color, saturation, light, alpha } = rgbToHsl(rgbaColors));
+
+				// If we get a hue number value :
+			} else {
+				for (const index in arguments) {
+					const argument = arguments[index];
+					if (typeof argument !== "number") throw new Error(getErrorMessage.argument(index, argument));
+				}
 			}
-			this.#hue = getFormatedHue(ColorOrValue ?? defaultValues.hue);
+			this.#hue = getFormatedHue(color ?? defaultValues.hue);
 			this.#saturation = getFormatedValue(saturation ?? defaultValues.saturation);
 			this.#light = getFormatedValue(light ?? defaultValues.light);
 			this.#alpha = getFormatedValue(alpha ?? defaultValues.alpha);
