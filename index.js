@@ -27,10 +27,8 @@
 	- feat : gestion des autres notations CSS rgb & hsl (% & /1)
 	- feat : création de "helpers" / ex: helper shadow = sat / 2 && light - 40% && alpha / 2  => shadows + color = shadowColor
 	- feat : method that export the status of the color (values, offset, hasReference) for debbug reason
-	- fix : if parameter = null ?
 	- feat : easy dark/light theme integration ?
 	- feat : add a remove method to reset fixed properties
-	- fix : callback offset must return a number : throw error.
 	*/
 
 const defaultValues = {
@@ -67,7 +65,7 @@ class Color {
 			let colors;
 			if (ColorOrValue.includes("#")) {
 				colors = hexToValue(ColorOrValue);
-			}
+			} else throw new Error(getErrorMessage.stringArgument);
 			({ hue: ColorOrValue, saturation, light, alpha } = rgbToHsl(colors));
 		}
 		// If we get a Color object :
@@ -85,6 +83,10 @@ class Color {
 			}
 			// If we get a hue number value :
 		} else {
+			for (const index in arguments) {
+				const argument = arguments[index];
+				if (typeof argument !== "number") throw new Error(getErrorMessage.argument(index, argument));
+			}
 			this.#hue = getFormatedHue(ColorOrValue ?? defaultValues.hue);
 			this.#saturation = getFormatedValue(saturation ?? defaultValues.saturation);
 			this.#light = getFormatedValue(light ?? defaultValues.light);
@@ -93,14 +95,22 @@ class Color {
 	}
 
 	#getValueFromOffset(value) {
-		const valueOffset = this[`${value}Offset`];
 		const refValue = this.#colorReference?.[value];
-		return typeof valueOffset === "function" ? valueOffset(refValue) : refValue + valueOffset;
+		const valueOffset = this[`${value}Offset`];
+
+		if (typeof valueOffset === "function") {
+			const valueFromCallback = valueOffset(refValue);
+			if (typeof valueFromCallback !== "number")
+				throw new Error(getErrorMessage.callback(value, valueFromCallback));
+			return valueFromCallback;
+		} else if (typeof valueOffset !== "number") throw new Error(getErrorMessage.offset(value, valueOffset));
+		return refValue + valueOffset;
 	}
 
 	// Hue :
 	get hue() {
-		return this.#hue ?? getFormatedHue(this.#getValueFromOffset("hue"));
+		const hueFromOffset = getFormatedHue(this.#getValueFromOffset("hue"));
+		return this.#hue ?? hueFromOffset;
 	}
 	set hue(hue) {
 		this.#hue = getFormatedHue(hue);
@@ -108,7 +118,8 @@ class Color {
 
 	// Saturation :
 	get saturation() {
-		return this.#saturation ?? getFormatedValue(this.#getValueFromOffset("saturation"));
+		const saturationFromOffset = getFormatedValue(this.#getValueFromOffset("saturation"));
+		return this.#saturation ?? saturationFromOffset;
 	}
 	set saturation(saturation) {
 		this.#saturation = getFormatedValue(saturation);
@@ -116,7 +127,8 @@ class Color {
 
 	// Light :
 	get light() {
-		return this.#light ?? getFormatedValue(this.#getValueFromOffset("light"));
+		const lightFromOffset = getFormatedValue(this.#getValueFromOffset("light"));
+		return this.#light ?? lightFromOffset;
 	}
 	set light(light) {
 		this.#light = getFormatedValue(light);
@@ -124,7 +136,8 @@ class Color {
 
 	// Alpha :
 	get alpha() {
-		return this.#alpha ?? getFormatedValue(this.#getValueFromOffset("alpha"));
+		const alphaFromOffset = getFormatedValue(this.#getValueFromOffset("alpha"));
+		return this.#alpha ?? alphaFromOffset;
 	}
 	set alpha(alpha) {
 		this.#alpha = getFormatedValue(alpha);
@@ -253,4 +266,41 @@ const hslToRgb = (hue, saturation, light) => {
 	}
 
 	return [red, green, blue];
+};
+
+/*
+
+
+Handling errors : 
+*/
+const checkDocsMessage = "Check docs at https://github.com/Lx-Ctn/color/#properties- to know more.";
+
+const stringArgumentMessage = `Argument must be a valid CSS string.
+${checkDocsMessage}`;
+
+const hueErrorMessage =
+	parameter => `The hue argument is a ${typeof parameter}, but a number, a CSS string, or a Color object was expected
+${checkDocsMessage}`;
+
+const argumentErrorMessage = (
+	property,
+	parameter
+) => `The ${property} argument is a ${typeof parameter}, but a number was expected
+${checkDocsMessage}`;
+
+const propertyErrorMessage = (
+	value,
+	returnValue
+) => `".${value}Offset" property return a ${typeof returnValue}, but must return a number.
+${checkDocsMessage}`;
+
+const getErrorMessage = {
+	stringArgument: stringArgumentMessage,
+	argument: (index, parameter) => {
+		if (index === "0") return hueErrorMessage(parameter);
+		const property = index === "1" ? "saturation" : index === "2" ? "light" : "alpha";
+		return argumentErrorMessage(property, parameter);
+	},
+	offset: (value, returnValue) => propertyErrorMessage(value, returnValue),
+	callback: (value, returnValue) => "Callback in your " + propertyErrorMessage(value, returnValue),
 };

@@ -409,11 +409,12 @@ This value will be fixed, independent of the reference value.
    It will still work if the number is outside the usual position (between 0 and 360°).
    > For exemple `-120` will have the same result as `240` (-120 + 360 = 240 : same position on the wheel).
 -  **_CSS color string_** : A string with a 6 or 8 (with alpha) hexadecimal color format that will determine the _hue_, _saturation_, _light_ and _alpha_ values.
+   > All next parameters will be ignored
 -  **_Color object_** : An other Color object can be passed, to be the reference on which this new Color will be based.
-All next parameters become _offset_ to shift from this reference.
-</dd></dl></dd>
-</dl>
-<br>
+   > All next parameters become _offset_ to shift from this reference.
+   </dd></dl></dd>
+   </dl>
+   <br>
 
 <dl>
 <code><b>Saturation</b></code> <i>(Optional)</i>
@@ -459,32 +460,30 @@ All next parameters become _offset_ to shift from this reference.
 <code><b>Color.hue</b></code>
 <dd><dl><dd>Get / set the hue value of the color (its position on the color wheel) :
 
+> If this value is set on a child <code>Color</code>, the parent hue value will be ignored.
+
 -  Getter <code>Color.hue</code> : 0 ⩽ number < 360 .
-   -  If <code>Color</code> is a child with no own hue value, <code>hue</code> will return the value of the parent with the offset applied.
+   -  If <code>Color</code> is a child with no own hue value:
+      <code>hue</code> will return the value of the parent with the offset applied.
    -  Default value : `0` (red).
--  Setter <code>Color.hue = number</code> : No need to format the number to be between 0 and 360, it will still work outside the usual position.
-
+-  Setter <code>Color.hue = number</code> : No need to format the number between 0 and 360, it will still work outside the usual position.
    > For exemple `-120` will have the same result as `240` (-120 + 360 = 240 : same position on the wheel).
-
-   If this value is set on a child <code>Color</code>, the parent hue value will be ignored.
-
-</dd></dl></dd>
-</dl>
-<br>
+   </dd></dl></dd>
+   </dl>
+   <br>
 
 <dl>
 <code><b>Color.saturation</b></code>
 <dd><dl><dd>Get / set the saturation value of the color (its intensity) :
 
+> If this value is set on a child <code>Color</code>, the parent saturation value will be ignored.
+
 -  Getter <code>Color.saturation</code> : 0 ⩽ number ⩽ 100 .
    -  If <code>Color</code> is a child with no own saturation value, <code>saturation</code> will return the value of the parent with the offset applied.
    -  Default value : `100` (pure color).
 -  Setter <code>Color.saturation = number</code> :
-
    -  Every number below `0` will set the saturation to `0`.
    -  Every number above `100` will set the saturation to `100`.
-
-   If this value is set on a child <code>Color</code>, the parent saturation value will be ignored.
    </dd></dl></dd>
    </dl>
    <br>
@@ -493,15 +492,14 @@ All next parameters become _offset_ to shift from this reference.
 <code><b>Color.light</b></code>
 <dd><dl><dd>Get / set the light value of the color :
 
+> If this value is set on a child <code>Color</code>, the parent light value will be ignored.
+
 -  Getter <code>Color.light</code> : 0 ⩽ number ⩽ 100 .
    -  If <code>Color</code> is a child with no own light value, <code>light</code> will return the value of the parent with the offset applied.
    -  Default value : `50` (pure color).
 -  Setter <code>Color.light = number</code> :
-
    -  Every number below `0` will set the light to `0`.
    -  Every number above `100` will set the light to `100`.
-
-   If this value is set on a child <code>Color</code>, the parent light value will be ignored.
    </dd></dl></dd>
    </dl>
    <br>
@@ -510,27 +508,27 @@ All next parameters become _offset_ to shift from this reference.
 <code><b>Color.alpha</b></code>
 <dd><dl><dd>Get / set the alpha value of the color (transparency) :
 
+> If this value is set on a child <code>Color</code>, the parent alpha value will be ignored.
+
 -  Getter <code>Color.alpha</code> : 0 ⩽ number ⩽ 100 .
    -  If <code>Color</code> is a child with no own alpha value, <code>alpha</code> will return the value of the parent with the offset applied.
    -  Default value : `100` (no transparency).
 -  Setter <code>Color.alpha = number</code> :
-
    -  Every number below `0` will set the alpha to `0`.
    -  Every number above `100` will set the alpha to `100`.
-
-   If this value is set on a child <code>Color</code>, the parent alpha value will be ignored.
    </dd></dl></dd>
    </dl>
    <br>
 
 <dl>
 <code><b>Color.hueOffset</b></code>
-<dd><dl><dd>Get / set the offset applied to the hue value of the <code>Color</code> parent's (to obtain this <code>Color</code> hue value). If <code>Color</code> don't have a parent, offset will be ignored.
+<dd><dl><dd>Get / set the offset applied to the hue value of the <code>Color</code> parent's (to obtain this <code>Color</code> hue value).
+
+> If <code>Color</code> don't have a parent, offset will be ignored.
 
 -  Getter <code>Color.hueOffset</code> : number | function.
    -  Default value : `0` (no change from parent value).
 -  Setter <code>Color.hueOffset = number | function</code>.
-
    -  If `hueOffset` is a _number_, the `hue` value will be `Parent.hue` + `Child.hueOffset`.
    -  If `hueOffset` is a _function_, the `Parent.hue` value will be given as parameter, and the function must return the wanted `hue` value.
    </dd></dl></dd>
@@ -539,12 +537,13 @@ All next parameters become _offset_ to shift from this reference.
 
 <dl>
 <code><b>Color.saturationOffset</b></code>
-<dd><dl><dd>Get / set the offset applied to the saturation value of the <code>Color</code> parent's (to obtain this <code>Color</code> saturation value). If <code>Color</code> don't have a parent, offset will be ignored.
+<dd><dl><dd>Get / set the offset applied to the saturation value of the <code>Color</code> parent's (to obtain this <code>Color</code> saturation value).
+
+> If <code>Color</code> don't have a parent, offset will be ignored.
 
 -  Getter <code>Color.saturationOffset</code> : number | function.
    -  Default value : `0` (no change from parent value).
 -  Setter <code>Color.saturationOffset = number | function</code>.
-
    -  If `saturationOffset` is a _number_, the `saturation` value will be `Parent.saturation` + `Child.saturationOffset`.
    -  If `saturationOffset` is a _function_, the `Parent.saturation` value will be given as parameter, and the function must return the wanted `saturation` value.
    </dd></dl></dd>
@@ -553,12 +552,13 @@ All next parameters become _offset_ to shift from this reference.
 
 <dl>
 <code><b>Color.lightOffset</b></code>
-<dd><dl><dd>Get / set the offset applied to the light value of the <code>Color</code> parent's (to obtain this <code>Color</code> light value). If <code>Color</code> don't have a parent, offset will be ignored.
+<dd><dl><dd>Get / set the offset applied to the light value of the <code>Color</code> parent's (to obtain this <code>Color</code> light value).
+
+> If <code>Color</code> don't have a parent, offset will be ignored.
 
 -  Getter <code>Color.lightOffset</code> : number | function.
    -  Default value : `0` (no change from parent value).
 -  Setter <code>Color.lightOffset = number | function</code>.
-
    -  If `lightOffset` is a _number_, the `light` value will be `Parent.light` + `Child.lightOffset`.
    -  If `lightOffset` is a _function_, the `Parent.light` value will be given as parameter, and the function must return the wanted `light` value.
    </dd></dl></dd>
@@ -567,12 +567,13 @@ All next parameters become _offset_ to shift from this reference.
 
 <dl>
 <code><b>Color.alphaOffset</b></code>
-<dd><dl><dd>Get / set the offset applied to the alpha value of the <code>Color</code> parent's (to obtain this <code>Color</code> alpha value). If <code>Color</code> don't have a parent, offset will be ignored.
+<dd><dl><dd>Get / set the offset applied to the alpha value of the <code>Color</code> parent's (to obtain this <code>Color</code> alpha value).
+
+> If <code>Color</code> don't have a parent, offset will be ignored.
 
 -  Getter <code>Color.alphaOffset</code> : number | function.
    -  Default value : `0` (no change from parent value).
 -  Setter <code>Color.alphaOffset = number | function</code>.
-
    -  If `alphaOffset` is a _number_, the `alpha` value will be `Parent.alpha` + `Child.alphaOffset`.
    -  If `alphaOffset` is a _function_, the `Parent.alpha` value will be given as parameter, and the function must return the wanted `alpha` value.
    </dd></dl></dd>
