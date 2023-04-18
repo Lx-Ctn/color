@@ -408,7 +408,7 @@ This value will be fixed, independent of the reference value.
 -  **_Hue_** : A number for the color position on the color wheel.
    It will still work if the number is outside the usual position (between 0 and 360°).
    > For exemple `-120` will have the same result as `240` (-120 + 360 = 240 : same position on the wheel).
--  **_CSS color string_** : A string with a 6 or 8 (with alpha) hexadecimal color format that will determine the _hue_, _saturation_, _light_ and _alpha_ values.
+-  **_CSS color string_** : A string with a 3, 4 (with alpha), 6 or 8 (with alpha) hexadecimal color format that will determine the _hue_, _saturation_, _light_ and _alpha_ values.
    > All next parameters will be ignored
 -  **_Color object_** : An other Color object can be passed, to be the reference on which this new Color will be based.
    > All next parameters become _offset_ to shift from this reference.

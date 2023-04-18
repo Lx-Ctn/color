@@ -29,6 +29,7 @@
 	- feat : method that export the status of the color (values, offset, hasReference) for debbug reason
 	- feat : easy dark/light theme integration ?
 	- feat : add a remove method to reset fixed properties
+	- doc : add useful exemple in the README section
 	*/
 
 const defaultValues = {
@@ -45,8 +46,8 @@ class Color {
 	#saturation;
 	#light;
 	#alpha;
-	// Les paramètres sont protégés pour assurer les valeurs min et max (propriétés de 0 à 100%)
-	// Ainsi que la rotation sur la roue chromatique
+	// Parameters are protected to ensure min and max values (properties from 0 to 100%)
+	// And the rotation around the color wheel.
 
 	constructor(
 		ColorOrValue = defaultValues.hue,
@@ -63,11 +64,12 @@ class Color {
 		// If we get a CSS color value :
 		if (ColorOrValue instanceof String || typeof ColorOrValue === "string") {
 			let colors;
-			if (ColorOrValue.includes("#")) {
+			if (ColorOrValue.startsWith("#")) {
 				colors = hexToValue(ColorOrValue);
 			} else throw new Error(getErrorMessage.stringArgument);
 			({ hue: ColorOrValue, saturation, light, alpha } = rgbToHsl(colors));
 		}
+
 		// If we get a Color object :
 		if (ColorOrValue instanceof Color) {
 			this.#colorReference = ColorOrValue;
@@ -81,6 +83,7 @@ class Color {
 				default:
 					break;
 			}
+
 			// If we get a hue number value :
 		} else {
 			for (const index in arguments) {
@@ -177,12 +180,18 @@ export default Color;
 const getFormatedHue = hue => (hue >= 360 ? hue % 360 : hue < 0 ? (hue % 360) + 360 : hue);
 const getFormatedValue = value => (value > 100 ? 100 : value < 0 ? 0 : value);
 
-// Converts string to values :
-const hexToValue = stringColor => {
-	const red = parseInt(stringColor.slice(1, 3), 16);
-	const green = parseInt(stringColor.slice(3, 5), 16);
-	const blue = parseInt(stringColor.slice(5, 7), 16);
-	const alpha = parseInt(stringColor.slice(7) || "ff", 16);
+// Converts hex string to digital values :
+const hexToValue = (stringColor = "") => {
+	const isShort = stringColor.length < 7; // For the short hex syntax like "#f00"
+	if (isShort) stringColor = stringColor.replace(/^#(.)(.)(.)(.?)/i, "#$1$1$2$2$3$3$4$4");
+
+	const hex = stringColor.match(/^#(?<red>.{2})(?<green>.{2})(?<blue>.{2})(?<alpha>.{0,2})/).groups;
+
+	const red = parseInt(hex.red, 16);
+	const green = parseInt(hex.green, 16);
+	const blue = parseInt(hex.blue, 16);
+	const alpha = parseInt(hex.alpha || "ff", 16);
+
 	return { red, green, blue, alpha };
 };
 
