@@ -32,6 +32,15 @@
 	- feat : add a remove method to reset fixed properties
 	- fix : callback offset must return a number : throw error.
 	*/
+
+const defaultValues = {
+	hue: 0,
+	saturation: 100,
+	light: 50,
+	alpha: 100,
+	offset: 0,
+};
+
 class Color {
 	#colorReference;
 	#hue;
@@ -41,7 +50,12 @@ class Color {
 	// Les paramètres sont protégés pour assurer les valeurs min et max (propriétés de 0 à 100%)
 	// Ainsi que la rotation sur la roue chromatique
 
-	constructor(ColorOrValue = 0, saturation = 100, light = 50, alpha = 100) {
+	constructor(
+		ColorOrValue = defaultValues.hue,
+		saturation = defaultValues.saturation,
+		light = defaultValues.light,
+		alpha = defaultValues.alpha
+	) {
 		// init :
 		this.hueOffset = 0;
 		this.saturationOffset = 0;
@@ -61,20 +75,20 @@ class Color {
 			this.#colorReference = ColorOrValue;
 			switch (arguments.length) {
 				case 4:
-					this.alphaOffset = alpha; // eslint-disable-next-line no-fallthrough
+					this.alphaOffset = alpha ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
 				case 3:
-					this.lightOffset = light; // eslint-disable-next-line no-fallthrough
+					this.lightOffset = light ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
 				case 2:
-					this.saturationOffset = saturation; // eslint-disable-next-line no-fallthrough
+					this.saturationOffset = saturation ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
 				default:
 					break;
 			}
 			// If we get a hue number value :
 		} else {
-			this.#hue = getFormatedHue(ColorOrValue);
-			this.#saturation = getFormatedValue(saturation);
-			this.#light = getFormatedValue(light);
-			this.#alpha = getFormatedValue(alpha);
+			this.#hue = getFormatedHue(ColorOrValue ?? defaultValues.hue);
+			this.#saturation = getFormatedValue(saturation ?? defaultValues.saturation);
+			this.#light = getFormatedValue(light ?? defaultValues.light);
+			this.#alpha = getFormatedValue(alpha ?? defaultValues.alpha);
 		}
 	}
 

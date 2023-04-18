@@ -419,8 +419,8 @@ All next parameters become _offset_ to shift from this reference.
 <code><b>Saturation</b></code> <i>(Optional)</i>
 <dd><dl><dd>The 2<sup>nd</sup> parameter set the <i>saturation</i> value or offset :
 
--  If the 1<sup>st</sup> parameter is a _hue_ value : this one will set the _saturation_ **value** ( `100` by default : Pure color ).
--  If the 1<sup>st</sup> parameter is a _Color_ object : this one will set the _saturation_ **offset** ( `0` by default : No offset ).
+-  If the 1<sup>st</sup> parameter is a _hue_ value : this one will set the _saturation_ **value** (`100` by default : Pure color).
+-  If the 1<sup>st</sup> parameter is a _Color_ object : this one will set the _saturation_ **offset** (`0` by default : No offset).
 -  If the 1<sup>st</sup> parameter is a _CSS color string_ : this one will be **ignored**.
 </dd></dl></dd>
 </dl>
