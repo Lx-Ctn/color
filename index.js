@@ -25,9 +25,7 @@
 	TODO:
 	- feat : gestion des notations racourcies "#fff" -> "#ffffff" && "#ffff" -> "#ffffffff"
 	- feat : gestion des autres notations CSS rgb & hsl (% & /1)
-	- feat : export to # et rgb
 	- feat : création de "helpers" / ex: helper shadow = sat / 2 && light - 40% && alpha / 2  => shadows + color = shadowColor
-	- fix : double approximation avec toHex qui call hslToRgb qui cdéjà call Math.round()
 	- feat : method that export the status of the color (values, offset, hasReference) for debbug reason
 	- fix : if parameter = null ?
 	- feat : easy dark/light theme integration ?
@@ -137,12 +135,12 @@ class Color {
 		};
 		const [red, green, blue] = hslToRgb(this.hue, this.saturation, this.light).map(value => getHex(value));
 		const alpha = getHex(Math.round((this.alpha * 255) / 100));
-		console.log({ red, green, blue, alpha });
 		return this.alpha === 100 ? `#${red}${green}${blue}` : `#${red}${green}${blue}${alpha}`;
 	}
 }
 export default Color;
 /*
+
 
 
 
@@ -200,10 +198,12 @@ const rgbToHsl = ({ red, green, blue, alpha = 255 }) => {
 		hue /= 6;
 	}
 
-	hue = Math.round(hue * 360);
-	saturation = Math.round(saturation * 100);
-	light = Math.round(light * 100);
-	alpha = Math.round(alpha * 100);
+	// Keeping a 1 decimal value for precision compare to hex and rgb values :
+	hue = Math.round(hue * 360 * 10) / 10;
+	saturation = Math.round(saturation * 100 * 10) / 10;
+	light = Math.round(light * 100 * 10) / 10;
+	alpha = Math.round(alpha * 100 * 10) / 10;
+
 	return { hue, saturation, light, alpha };
 };
 
@@ -236,7 +236,6 @@ const hslToRgb = (hue, saturation, light) => {
 		red = Math.round(hueToRgb(p, q, hue + 2 / 6) * 255);
 		green = Math.round(hueToRgb(p, q, hue) * 255);
 		blue = Math.round(hueToRgb(p, q, hue - 2 / 6) * 255);
-		console.log({ red, green, blue });
 	}
 
 	return [red, green, blue];

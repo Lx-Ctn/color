@@ -1,5 +1,4 @@
 <h1 align="center" name="top">Color</h1>
-
 <p align="center">A color API to easily handle color variation to create dynamic color theme.</p>
 
 ---
@@ -22,7 +21,7 @@
       <li><a href="#the-hsl-solution-">The HSL solution</a></li>
       </ul>
    </li>
-   <li><a href="#the-color-object-">The Color API</a></li>
+   <li><a href="#the-color-api-">The Color API</a></li>
       <ul>
       <li><a href="#create-a-color-">Creation of a Color</a></li>
       <li><a href="#create-a-child-color-">Creation of a child Color</a></li>
@@ -587,8 +586,10 @@ All next parameters become _offset_ to shift from this reference.
 
 <br>
 
-`.toHsl()`
-: Return the HSL value of the color in CSS compatible string.
+<dl>
+<dt><code>.toHsl()</code></dt>
+<dd><dl><dd>Return the HSL value of the color in CSS compatible string.</dd></dl></dd>
+</dl>
 
 ```js
 const mainColor = new Color(360, 90, 70);
@@ -600,8 +601,10 @@ mainColor.toHsl(); // "hsla(360, 90%, 70%, 50%)"
 
 <br>
 
-`.toRgb()`
-: Return the RGB value of the color in CSS compatible string.
+<dl>
+<dt><code>.toRgb()</code></dt>
+<dd><dl><dd>Return the RGB value of the color in CSS compatible string.</dd></dl></dd>
+</dl>
 
 ```js
 const mainColor = new Color(360, 90, 70);
@@ -613,8 +616,10 @@ mainColor.toRgb(); // "rgba(247, 110, 110, 0.5)"
 
 <br>
 
-`.toHex()`
-: Return the hexadecimal value of the color in CSS compatible string.
+<dl>
+<dt><code>.toHex()</code></dt>
+<dd><dl><dd>Return the hexadecimal value of the color in CSS compatible string.</dd></dl></dd>
+</dl>
 
 ```js
 const mainColor = new Color(360, 90, 70);
