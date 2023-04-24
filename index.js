@@ -28,8 +28,7 @@
 	- feat : method that export the status of the color (values, offset, hasReference) for debbug reason
 	- feat : easy dark/light theme integration ?
 	- feat : add a remove method to reset fixed properties
-	- doc : add useful exemple in the README section
-	- fix : wrong conversion at 0% saturation (from hex or hsl) 
+	- doc : add useful exemple in the README section 
 	*/
 
 const defaultValues = {
@@ -113,37 +112,37 @@ class Color {
 	// Hue :
 	get hue() {
 		const hueFromOffset = getFormatedHue(this.#getValueFromOffset("hue"));
-		return this.#hue ?? hueFromOffset;
+		return roundAt1Decimal(this.#hue ?? hueFromOffset);
 	}
 	set hue(hue) {
-		this.#hue = getFormatedHue(hue);
+		if (isValue(hue)) this.#hue = getFormatedHue(hue);
 	}
 
 	// Saturation :
 	get saturation() {
 		const saturationFromOffset = getFormatedValue(this.#getValueFromOffset("saturation"));
-		return this.#saturation ?? saturationFromOffset;
+		return roundAt1Decimal(this.#saturation ?? saturationFromOffset);
 	}
 	set saturation(saturation) {
-		this.#saturation = getFormatedValue(saturation);
+		if (isValue(saturation)) this.#saturation = getFormatedValue(saturation);
 	}
 
 	// Light :
 	get light() {
 		const lightFromOffset = getFormatedValue(this.#getValueFromOffset("light"));
-		return this.#light ?? lightFromOffset;
+		return roundAt1Decimal(this.#light ?? lightFromOffset);
 	}
 	set light(light) {
-		this.#light = getFormatedValue(light);
+		if (isValue(light)) this.#light = getFormatedValue(light);
 	}
 
 	// Alpha :
 	get alpha() {
 		const alphaFromOffset = getFormatedValue(this.#getValueFromOffset("alpha"));
-		return this.#alpha ?? alphaFromOffset;
+		return roundAt1Decimal(this.#alpha ?? alphaFromOffset);
 	}
 	set alpha(alpha) {
-		this.#alpha = getFormatedValue(alpha);
+		if (isValue(alpha)) this.#alpha = getFormatedValue(alpha);
 	}
 
 	// Export css :
@@ -179,6 +178,8 @@ export default Color;
 */ // Allow every argument but export the right HSL value :
 const getFormatedHue = hue => (hue >= 360 ? hue % 360 : hue < 0 ? (hue % 360) + 360 : hue);
 const getFormatedValue = value => (value > 100 ? 100 : value < 0 ? 0 : value);
+const roundAt1Decimal = number => Math.round(number * 10) / 10;
+const isValue = value => value !== null && value !== undefined;
 
 // Converts hex string to digital values :
 const hexToValue = (stringColor = "") => {
@@ -235,10 +236,10 @@ const rgbToHsl = ({ red, green, blue, alpha = 255 }) => {
 	}
 
 	// Keeping a 1 decimal value for precision compare to hex and rgb values :
-	hue = Math.round(hue * 360 * 10) / 10;
-	saturation = Math.round(saturation * 100 * 10) / 10;
-	light = Math.round(light * 100 * 10) / 10;
-	alpha = Math.round(alpha * 100 * 10) / 10;
+	hue = roundAt1Decimal(hue * 360);
+	saturation = roundAt1Decimal(saturation * 100);
+	light = roundAt1Decimal(light * 100);
+	alpha = roundAt1Decimal(alpha * 100);
 
 	return { hue, saturation, light, alpha };
 };

@@ -1,2 +1,8 @@
-/assets/Color\ Wheel.ai
+assets/Color\ Wheel.ai
 .DS_Store
+node_modules
+package-lock.json
+
+// Temp test :
+testbrowser.js
+index.html
