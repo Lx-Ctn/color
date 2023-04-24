@@ -113,6 +113,8 @@ class Color {
 
 	/*
 
+
+
 	/****************************/
 	/***  Color properties :  ***/
 	/****************************/
@@ -123,7 +125,7 @@ class Color {
 		return roundAt1Decimal(this.#hue ?? hueFromOffset());
 	}
 	set hue(hue) {
-		if (isValue(hue)) this.#hue = getFormatedHue(hue);
+		if (checkPropertyType("hue", hue)) this.#hue = getFormatedHue(hue);
 	}
 
 	// Saturation :
@@ -132,7 +134,7 @@ class Color {
 		return roundAt1Decimal(this.#saturation ?? saturationFromOffset());
 	}
 	set saturation(saturation) {
-		if (isValue(saturation)) this.#saturation = getFormatedValue(saturation);
+		if (checkPropertyType("saturation", saturation)) this.#saturation = getFormatedValue(saturation);
 	}
 
 	// Light :
@@ -141,7 +143,7 @@ class Color {
 		return roundAt1Decimal(this.#light ?? lightFromOffset());
 	}
 	set light(light) {
-		if (isValue(light)) this.#light = getFormatedValue(light);
+		if (checkPropertyType("light", light)) this.#light = getFormatedValue(light);
 	}
 
 	// Alpha :
@@ -150,10 +152,12 @@ class Color {
 		return roundAt1Decimal(this.#alpha ?? alphaFromOffset());
 	}
 	set alpha(alpha) {
-		if (isValue(alpha)) this.#alpha = getFormatedValue(alpha);
+		if (checkPropertyType("alpha", alpha)) this.#alpha = getFormatedValue(alpha);
 	}
 
 	/*
+
+
 
 	/*******************/
 	/***  Offsets :  ***/
@@ -192,6 +196,7 @@ class Color {
 	}
 
 	/*
+
 
 	/*******************/
 	/***  Methods :  ***/
@@ -233,12 +238,17 @@ export default Color;
 const roundAt1Decimal = number => Math.round(number * 10) / 10;
 const isValue = value => value !== null && value !== undefined;
 
-// Offsets assignment type cheking :
+// assignment type cheking :
 const offsetTypes = ["number", "function"];
 const checkOffsetType = (property, offset) => {
-	if (!isValue(offset)) return false; // If null || undefined, just ignore the assignment.
+	if (!isValue(offset)) return false; // If null || undefined, just ignore the assignment with no error.
 	if (offsetTypes.includes(typeof offset)) return true;
 	throw new Error(getErrorMessage.offset(property, offset));
+};
+const checkPropertyType = (property, value) => {
+	if (!isValue(value)) return false; // If null || undefined, just ignore the assignment with no error.
+	if (typeof value === "number") return true;
+	throw new Error(getErrorMessage.property(property, value));
 };
 
 // Allow every argument but export the right HSL value :
@@ -344,12 +354,14 @@ const hslToRgb = (hue, saturation, light) => {
 	blue = Math.round(blue * 255);
 	return [red, green, blue];
 };
-
 /*
 
 
-Handling errors : 
-*/
+
+/***************************/
+/***  Handling errors :  ***/
+/***************************/
+
 const checkDocsMessage = "Check docs at https://github.com/Lx-Ctn/color/#properties- to know more.";
 
 const stringArgumentMessage = `Argument must be a valid CSS string.
@@ -365,10 +377,16 @@ const argumentErrorMessage = (
 ) => `The ${property} argument is a ${typeof parameter}, but a number was expected
 ${checkDocsMessage}`;
 
-const propertyErrorMessage = (
+const offsetErrorMessage = (
 	property,
 	returnValue
 ) => `"${property}Offset" property return a ${typeof returnValue}, but must return a number, or a function returning a number.
+${checkDocsMessage}`;
+
+const propertyErrorMessage = (
+	property,
+	returnValue
+) => `"${property}" property return a ${typeof returnValue}, but must return a number.
 ${checkDocsMessage}`;
 
 const getErrorMessage = {
@@ -378,6 +396,7 @@ const getErrorMessage = {
 		const property = index === "1" ? "saturation" : index === "2" ? "light" : "alpha";
 		return argumentErrorMessage(property, parameter);
 	},
-	offset: (property, returnValue) => propertyErrorMessage(property, returnValue),
-	callback: (value, returnValue) => "Callback in your " + propertyErrorMessage(value, returnValue),
+	property: (property, returnValue) => propertyErrorMessage(property, returnValue),
+	offset: (property, returnValue) => offsetErrorMessage(property, returnValue),
+	callback: (value, returnValue) => "Callback in your " + offsetErrorMessage(value, returnValue),
 };
