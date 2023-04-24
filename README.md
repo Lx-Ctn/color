@@ -536,6 +536,7 @@ This value will be fixed, independent of the reference value.
 -  Setter <code>Color.hueOffset = number | function</code>.
    -  If `hueOffset` is a _number_, the `hue` value will be `Parent.hue` + `Child.hueOffset`.
    -  If `hueOffset` is a _function_, the `Parent.hue` value will be given as parameter, and the function must return the wanted `hue` value.
+   -  If `null` or `undefined`, assignment will be ignored.
    </dd></dl></dd>
    </dl>
    <br>
@@ -551,6 +552,7 @@ This value will be fixed, independent of the reference value.
 -  Setter <code>Color.saturationOffset = number | function</code>.
    -  If `saturationOffset` is a _number_, the `saturation` value will be `Parent.saturation` + `Child.saturationOffset`.
    -  If `saturationOffset` is a _function_, the `Parent.saturation` value will be given as parameter, and the function must return the wanted `saturation` value.
+   -  If `null` or `undefined`, assignment will be ignored.
    </dd></dl></dd>
    </dl>
    <br>
@@ -566,6 +568,7 @@ This value will be fixed, independent of the reference value.
 -  Setter <code>Color.lightOffset = number | function</code>.
    -  If `lightOffset` is a _number_, the `light` value will be `Parent.light` + `Child.lightOffset`.
    -  If `lightOffset` is a _function_, the `Parent.light` value will be given as parameter, and the function must return the wanted `light` value.
+   -  If `null` or `undefined`, assignment will be ignored.
    </dd></dl></dd>
    </dl>
    <br>
@@ -581,6 +584,7 @@ This value will be fixed, independent of the reference value.
 -  Setter <code>Color.alphaOffset = number | function</code>.
    -  If `alphaOffset` is a _number_, the `alpha` value will be `Parent.alpha` + `Child.alphaOffset`.
    -  If `alphaOffset` is a _function_, the `Parent.alpha` value will be given as parameter, and the function must return the wanted `alpha` value.
+   -  If `null` or `undefined`, assignment will be ignored.
    </dd></dl></dd>
    </dl>
 

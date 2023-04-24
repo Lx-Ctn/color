@@ -40,13 +40,20 @@ const defaultValues = {
 };
 
 class Color {
+	// Parameters are protected to ensure min and max values (properties from 0 to 100%),
+	// the rotation around the color wheel,
+	// And type checking
 	#colorReference;
 	#hue;
 	#saturation;
 	#light;
 	#alpha;
-	// Parameters are protected to ensure min and max values (properties from 0 to 100%)
-	// And the rotation around the color wheel.
+	#offset = {
+		hue: defaultValues.offset,
+		saturation: defaultValues.offset,
+		light: defaultValues.offset,
+		alpha: defaultValues.offset,
+	};
 
 	constructor(
 		color = defaultValues.hue,
@@ -54,22 +61,17 @@ class Color {
 		light = defaultValues.light,
 		alpha = defaultValues.alpha
 	) {
-		// init :
-		this.hueOffset = 0;
-		this.saturationOffset = 0;
-		this.lightOffset = 0;
-		this.alphaOffset = 0;
-
 		// If we get a Color object :
 		if (color instanceof Color) {
 			this.#colorReference = color;
 			switch (arguments.length) {
+				case arguments.length >= 5:
 				case 4:
-					this.alphaOffset = alpha ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
+					this.#offset.alpha = alpha ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
 				case 3:
-					this.lightOffset = light ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
+					this.#offset.alpha = light ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
 				case 2:
-					this.saturationOffset = saturation ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
+					this.#offset.saturation = saturation ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
 				default:
 					break;
 			}
@@ -86,7 +88,8 @@ class Color {
 			} else {
 				for (const index in arguments) {
 					const argument = arguments[index];
-					if (typeof argument !== "number") throw new Error(getErrorMessage.argument(index, argument));
+					if (typeof argument !== "number" && argument !== null)
+						throw new Error(getErrorMessage.argument(index, argument));
 				}
 			}
 			this.#hue = getFormatedHue(color ?? defaultValues.hue);
@@ -98,8 +101,7 @@ class Color {
 
 	#getValueFromOffset(value) {
 		const refValue = this.#colorReference?.[value];
-		const valueOffset = this[`${value}Offset`];
-
+		const valueOffset = this.#offset[value];
 		if (typeof valueOffset === "function") {
 			const valueFromCallback = valueOffset(refValue);
 			if (typeof valueFromCallback !== "number")
@@ -109,10 +111,16 @@ class Color {
 		return refValue + valueOffset;
 	}
 
+	/*
+
+	/****************************/
+	/***  Color properties :  ***/
+	/****************************/
+
 	// Hue :
 	get hue() {
-		const hueFromOffset = getFormatedHue(this.#getValueFromOffset("hue"));
-		return roundAt1Decimal(this.#hue ?? hueFromOffset);
+		const hueFromOffset = () => getFormatedHue(this.#getValueFromOffset("hue"));
+		return roundAt1Decimal(this.#hue ?? hueFromOffset());
 	}
 	set hue(hue) {
 		if (isValue(hue)) this.#hue = getFormatedHue(hue);
@@ -120,8 +128,8 @@ class Color {
 
 	// Saturation :
 	get saturation() {
-		const saturationFromOffset = getFormatedValue(this.#getValueFromOffset("saturation"));
-		return roundAt1Decimal(this.#saturation ?? saturationFromOffset);
+		const saturationFromOffset = () => getFormatedValue(this.#getValueFromOffset("saturation"));
+		return roundAt1Decimal(this.#saturation ?? saturationFromOffset());
 	}
 	set saturation(saturation) {
 		if (isValue(saturation)) this.#saturation = getFormatedValue(saturation);
@@ -129,8 +137,8 @@ class Color {
 
 	// Light :
 	get light() {
-		const lightFromOffset = getFormatedValue(this.#getValueFromOffset("light"));
-		return roundAt1Decimal(this.#light ?? lightFromOffset);
+		const lightFromOffset = () => getFormatedValue(this.#getValueFromOffset("light"));
+		return roundAt1Decimal(this.#light ?? lightFromOffset());
 	}
 	set light(light) {
 		if (isValue(light)) this.#light = getFormatedValue(light);
@@ -138,14 +146,58 @@ class Color {
 
 	// Alpha :
 	get alpha() {
-		const alphaFromOffset = getFormatedValue(this.#getValueFromOffset("alpha"));
-		return roundAt1Decimal(this.#alpha ?? alphaFromOffset);
+		const alphaFromOffset = () => getFormatedValue(this.#getValueFromOffset("alpha"));
+		return roundAt1Decimal(this.#alpha ?? alphaFromOffset());
 	}
 	set alpha(alpha) {
 		if (isValue(alpha)) this.#alpha = getFormatedValue(alpha);
 	}
 
-	// Export css :
+	/*
+
+	/*******************/
+	/***  Offsets :  ***/
+	/*******************/
+
+	// Hue offset :
+	get hueOffset() {
+		return this.#offset.hue;
+	}
+	set hueOffset(hueOffset) {
+		if (checkOffsetType("hue", hueOffset)) this.#offset.hue = hueOffset;
+	}
+
+	// Saturation offset :
+	get saturationOffset() {
+		return this.#offset.saturation;
+	}
+	set saturationOffset(saturationOffset) {
+		if (checkOffsetType("saturation", saturationOffset)) this.#offset.saturation = saturationOffset;
+	}
+
+	// Light offset :
+	get lightOffset() {
+		return this.#offset.light;
+	}
+	set lightOffset(lightOffset) {
+		if (checkOffsetType("light", lightOffset)) this.#offset.light = lightOffset;
+	}
+
+	// Alpha offset :
+	get alphaOffset() {
+		return this.#offset.alpha;
+	}
+	set alphaOffset(alphaOffset) {
+		if (checkOffsetType("alpha", alphaOffset)) this.#offset.alpha = alphaOffset;
+	}
+
+	/*
+
+	/*******************/
+	/***  Methods :  ***/
+	/*******************/
+
+	// Export CSS string :
 	toHsl() {
 		return this.alpha === 100
 			? `hsl(${this.hue}, ${this.saturation}%, ${this.light}%)`
@@ -167,19 +219,31 @@ class Color {
 		return this.alpha === 100 ? `#${red}${green}${blue}` : `#${red}${green}${blue}${alpha}`;
 	}
 }
+
 export default Color;
 /*
 
 
 
 
+/*****************/
+/***  Utils :  ***/
+/*****************/
 
-
-*/ // Allow every argument but export the right HSL value :
-const getFormatedHue = hue => (hue >= 360 ? hue % 360 : hue < 0 ? (hue % 360) + 360 : hue);
-const getFormatedValue = value => (value > 100 ? 100 : value < 0 ? 0 : value);
 const roundAt1Decimal = number => Math.round(number * 10) / 10;
 const isValue = value => value !== null && value !== undefined;
+
+// Offsets assignment type cheking :
+const offsetTypes = ["number", "function"];
+const checkOffsetType = (property, offset) => {
+	if (!isValue(offset)) return false; // If null || undefined, just ignore the assignment.
+	if (offsetTypes.includes(typeof offset)) return true;
+	throw new Error(getErrorMessage.offset(property, offset));
+};
+
+// Allow every argument but export the right HSL value :
+const getFormatedHue = hue => (hue >= 360 ? hue % 360 : hue < 0 ? (hue % 360) + 360 : hue);
+const getFormatedValue = value => (value > 100 ? 100 : value < 0 ? 0 : value);
 
 // Converts hex string to digital values :
 const hexToValue = (stringColor = "") => {
@@ -302,9 +366,9 @@ const argumentErrorMessage = (
 ${checkDocsMessage}`;
 
 const propertyErrorMessage = (
-	value,
+	property,
 	returnValue
-) => `".${value}Offset" property return a ${typeof returnValue}, but must return a number.
+) => `"${property}Offset" property return a ${typeof returnValue}, but must return a number, or a function returning a number.
 ${checkDocsMessage}`;
 
 const getErrorMessage = {
@@ -314,6 +378,6 @@ const getErrorMessage = {
 		const property = index === "1" ? "saturation" : index === "2" ? "light" : "alpha";
 		return argumentErrorMessage(property, parameter);
 	},
-	offset: (value, returnValue) => propertyErrorMessage(value, returnValue),
+	offset: (property, returnValue) => propertyErrorMessage(property, returnValue),
 	callback: (value, returnValue) => "Callback in your " + propertyErrorMessage(value, returnValue),
 };

@@ -73,6 +73,27 @@ describe("undefined parameters", () => {
 		expect(blue.alpha).toBe(57);
 		expect(blue.toHsl()).toBe("hsla(240, 100%, 50%, 57%)");
 	});
+
+	test("undefined hueOffset assignment", () => {
+		const red = new Color();
+		red.hueOffset = undefined;
+		expect(red.hueOffset).toBe(0);
+		expect(red.hue).toBe(0);
+		expect(red.toHsl()).toBe("hsl(0, 100%, 50%)");
+		expect(red.toRgb()).toBe("rgb(255, 0, 0)");
+		expect(red.toHex()).toBe("#ff0000");
+
+		const blue = new Color(red);
+		blue.hueOffset = 240;
+		expect(blue.hueOffset).toBe(240);
+		expect(blue.hue).toBe(240);
+		expect(blue.toHsl()).toBe("hsl(240, 100%, 50%)");
+
+		blue.hueOffset = undefined;
+		expect(blue.hueOffset).toBe(240);
+		expect(blue.hue).toBe(240);
+		expect(blue.toHsl()).toBe("hsl(240, 100%, 50%)");
+	});
 });
 
 test("others", () => {
