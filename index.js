@@ -76,7 +76,7 @@ class Color {
 					break;
 			}
 		} else {
-			// If we get a CSS color value :
+			// If we get a CSS color string :
 			if (color instanceof String || typeof color === "string") {
 				let rgbaColors;
 				if (color.startsWith("#")) {
@@ -122,7 +122,7 @@ class Color {
 	// Hue :
 	get hue() {
 		const hueFromOffset = () => getFormatedHue(this.#getValueFromOffset("hue"));
-		return roundAt1Decimal(this.#hue ?? hueFromOffset());
+		return this.#hue ?? hueFromOffset();
 	}
 	set hue(hue) {
 		if (checkPropertyType("hue", hue)) this.#hue = getFormatedHue(hue);
@@ -131,7 +131,7 @@ class Color {
 	// Saturation :
 	get saturation() {
 		const saturationFromOffset = () => getFormatedValue(this.#getValueFromOffset("saturation"));
-		return roundAt1Decimal(this.#saturation ?? saturationFromOffset());
+		return this.#saturation ?? saturationFromOffset();
 	}
 	set saturation(saturation) {
 		if (checkPropertyType("saturation", saturation)) this.#saturation = getFormatedValue(saturation);
@@ -140,7 +140,7 @@ class Color {
 	// Light :
 	get light() {
 		const lightFromOffset = () => getFormatedValue(this.#getValueFromOffset("light"));
-		return roundAt1Decimal(this.#light ?? lightFromOffset());
+		return this.#light ?? lightFromOffset();
 	}
 	set light(light) {
 		if (checkPropertyType("light", light)) this.#light = getFormatedValue(light);
@@ -149,7 +149,7 @@ class Color {
 	// Alpha :
 	get alpha() {
 		const alphaFromOffset = () => getFormatedValue(this.#getValueFromOffset("alpha"));
-		return roundAt1Decimal(this.#alpha ?? alphaFromOffset());
+		return this.#alpha ?? alphaFromOffset();
 	}
 	set alpha(alpha) {
 		if (checkPropertyType("alpha", alpha)) this.#alpha = getFormatedValue(alpha);
@@ -252,8 +252,16 @@ const checkPropertyType = (property, value) => {
 };
 
 // Allow every argument but export the right HSL value :
-const getFormatedHue = hue => (hue >= 360 ? hue % 360 : hue < 0 ? (hue % 360) + 360 : hue);
-const getFormatedValue = value => (value > 100 ? 100 : value < 0 ? 0 : value);
+const getFormatedHue = hue => {
+	hue = roundAt1Decimal(hue);
+	if (hue >= 360) return roundAt1Decimal(hue % 360); // js math float approximation problem
+	if (hue <= 0) return hue % 360 === 0 ? 0 : roundAt1Decimal(hue % 360) + 360;
+	return hue;
+};
+const getFormatedValue = value => {
+	value = roundAt1Decimal(value);
+	return value > 100 ? 100 : value <= 0 ? 0 : value;
+};
 
 // Converts hex string to digital values :
 const hexToValue = (stringColor = "") => {
