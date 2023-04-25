@@ -79,9 +79,9 @@ class Color {
 			// If we get a CSS color string :
 			if (color instanceof String || typeof color === "string") {
 				let rgbaColors;
-				if (color.startsWith("#")) {
+				if (isCssHexString(color)) {
 					rgbaColors = hexToValue(color);
-				} else throw new Error(getErrorMessage.stringArgument);
+				} else throw new Error(getErrorMessage.stringArgument(color));
 				({ hue: color, saturation, light, alpha } = rgbToHsl(rgbaColors));
 
 				// If we get a hue number value :
@@ -263,6 +263,11 @@ const getFormatedValue = value => {
 	return value > 100 ? 100 : value <= 0 ? 0 : value;
 };
 
+// Cheking for CSS strings format
+const isCssHexString = colorString => {
+	return colorString.match(/^#(\d|[a-f]){3,}$/i);
+};
+
 // Converts hex string to digital values :
 const hexToValue = (stringColor = "") => {
 	const isShort = stringColor.length < 7; // For the short hex syntax like "#f00"
@@ -372,33 +377,33 @@ const hslToRgb = (hue, saturation, light) => {
 
 const checkDocsMessage = "Check docs at https://github.com/Lx-Ctn/color/#properties- to know more.";
 
-const stringArgumentMessage = `Argument must be a valid CSS string.
+const stringArgumentMessage = argument => `Argument must be a valid CSS string, but "${argument}" was passed.
 ${checkDocsMessage}`;
 
 const hueErrorMessage =
-	parameter => `The hue argument is a ${typeof parameter}, but a number, a CSS string, or a Color object was expected
+	parameter => `' ${parameter} ', a ${typeof parameter}, was passed for the hue argument, but a number, a CSS string or a Color object is expected.
 ${checkDocsMessage}`;
 
 const argumentErrorMessage = (
 	property,
 	parameter
-) => `The ${property} argument is a ${typeof parameter}, but a number was expected
+) => `' ${parameter} ', a ${typeof parameter}, was passed for the ${property} argument, but a number is expected.
 ${checkDocsMessage}`;
 
 const offsetErrorMessage = (
 	property,
 	returnValue
-) => `"${property}Offset" property return a ${typeof returnValue}, but must return a number, or a function returning a number.
+) => `The "${property}Offset" property return ' ${returnValue} ', a ${typeof returnValue}, but must return a number, or a function returning a number.
 ${checkDocsMessage}`;
 
 const propertyErrorMessage = (
 	property,
 	returnValue
-) => `"${property}" property return a ${typeof returnValue}, but must return a number.
+) => `The "${property}" property return ' ${returnValue} ', a ${typeof returnValue}, but must return a number.
 ${checkDocsMessage}`;
 
 const getErrorMessage = {
-	stringArgument: stringArgumentMessage,
+	stringArgument: argument => stringArgumentMessage(argument),
 	argument: (index, parameter) => {
 		if (index === "0") return hueErrorMessage(parameter);
 		const property = index === "1" ? "saturation" : index === "2" ? "light" : "alpha";

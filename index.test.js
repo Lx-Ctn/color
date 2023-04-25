@@ -474,23 +474,25 @@ describe("hue number value", () => {
 
 	test("wrong hue type should throw error", () => {
 		const checkDocsMessage = "Check docs at https://github.com/Lx-Ctn/color/#properties- to know more.";
-		const wrongStringMessage = `Argument must be a valid CSS string.
+		const wrongStringMessage = argument => `Argument must be a valid CSS string, but "${argument}" was passed.
 ${checkDocsMessage}`;
-		const wrongTypeMessage =
-			type => `The hue argument is a ${type}, but a number, a CSS string, or a Color object was expected
+		const wrongTypeMessage = (
+			argument,
+			type
+		) => `' ${argument} ', a ${type}, was passed for the hue argument, but a number, a CSS string or a Color object is expected.
 ${checkDocsMessage}`;
 
 		// Constructor
 		const getNewColor = arg => {
 			new Color(arg);
 		};
-		expect(() => getNewColor("toto")).toThrow(new Error(wrongStringMessage));
-		expect(() => getNewColor("#zer")).toThrow(new Error(wrongStringMessage));
-		expect(() => getNewColor(true)).toThrow(new Error(wrongTypeMessage("boolean")));
-		expect(() => getNewColor(false)).toThrow(new Error(wrongTypeMessage("boolean")));
-		expect(() => getNewColor({})).toThrow(new Error(wrongTypeMessage("object")));
-		expect(() => getNewColor([])).toThrow(new Error(wrongTypeMessage("object")));
-		expect(() => getNewColor(() => "")).toThrow(new Error(wrongTypeMessage("function")));
+		expect(() => getNewColor("toto")).toThrow(new Error(wrongStringMessage("toto")));
+		expect(() => getNewColor("#zer")).toThrow(new Error(wrongStringMessage("#zer")));
+		expect(() => getNewColor(true)).toThrow(new Error(wrongTypeMessage(true, "boolean")));
+		expect(() => getNewColor(false)).toThrow(new Error(wrongTypeMessage(false, "boolean")));
+		expect(() => getNewColor({})).toThrow(new Error(wrongTypeMessage({}, "object")));
+		expect(() => getNewColor([])).toThrow(new Error(wrongTypeMessage([], "object")));
+		expect(() => getNewColor(() => "")).toThrow(new Error(wrongTypeMessage(() => "", "function")));
 	});
 });
 
