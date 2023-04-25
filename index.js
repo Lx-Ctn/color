@@ -2,18 +2,18 @@
  * Create a color object with hsl format + optionnal alpha
  * @class
  *
- * Permet d'intéragir facilement avec la couleur,
- * Par exemple d'accéder facilement aux nuances et ombres d'une couleur en variant la propriétés de luminosité.
+ * Allows easy interaction with colors, to create dynamic color theme or complexe color animations.
+ * E.g : easy access to tints and shades of a color through the light property variation.
  *
- * On peut passer un autre object Color en paramètre :
- * Il sera la référence pour garder un lien dynamique avec ses propriétés :
+ * A other Color object can be passed as argument :
+ * It will be the reference to keep a dynamic link with it's properties :
  * 		const mainColor = new Color(360, 90, 70);
  * 		const darkMainColor = new Color(mainColor, null, -30);
  * 		mainColor.hue = 30;
  * 		=> darkMainColor : (30, 90, 40)
- * La nouvelle instance hérite des changements sur la référence, sauf si la propriété est écrasée sur la nouvelle.
- * Les propriétés Offset permettent un décalage dynamique avec la valeur de référence.
- * => Idéal pour la gestion dynamique de thème de couleurs
+ * The new instance inherits the changes on the reference, unless the property is overwritten on the new one.
+ * Offset properties allows a dynamic offset with the reference's value.
+ * => Ideal for dynamic color theme management.
  *
  * @param	{Color|string|number} [color=0] - Set values (from a other Color or a CSS color string) or set hue from number (optional - 0 by default - 0° Hue get a pure red color)
  * @param	{number}	[saturation=100] - Set the saturation value (optional - 100% by default)
@@ -22,13 +22,17 @@
  */
 
 /*
-	TODO:
-	- feat : gestion des autres notations CSS rgb & hsl (% & /1)
-	- feat : création de "helpers" / ex: helper shadow = sat / 2 && light - 40% && alpha / 2  => shadows + color = shadowColor
+	TODO: 
+	- feat : accept other CSS color format : rgb and hsl (and % & /1)
+	- feat : creation of "helpers" / ex: helper shadow = sat / 2 && light - 40% && alpha / 2  => shadows + color = shadowColor
 	- feat : method that export the status of the color (values, offset, hasReference) for debbug reason
 	- feat : easy dark/light theme integration ?
 	- feat : add a remove method to reset fixed properties
 	- doc : add useful exemple in the README section 
+	- feat : add .parent with .ref alias to get parent color
+	- feat : allowing the remplacement of all color properties through a new color property, 
+				who act like the contructor function, accepting the same arguments, with value, css color strings and Color object
+	- 
 	*/
 
 const defaultValues = {
@@ -106,6 +110,7 @@ class Color {
 			const valueFromCallback = valueOffset(refValue);
 			if (typeof valueFromCallback !== "number")
 				throw new Error(getErrorMessage.callback(value, valueFromCallback));
+			if (Number.isNaN(valueFromCallback)) throw new Error(getErrorMessage.callbackIsNaN(value));
 			return valueFromCallback;
 		} else if (typeof valueOffset !== "number") throw new Error(getErrorMessage.offset(value, valueOffset));
 		return refValue + valueOffset;
@@ -377,9 +382,6 @@ const hslToRgb = (hue, saturation, light) => {
 
 const checkDocsMessage = "Check docs at https://github.com/Lx-Ctn/color/#properties- to know more.";
 
-const stringArgumentMessage = argument => `Argument must be a valid CSS string, but "${argument}" was passed.
-${checkDocsMessage}`;
-
 const hueErrorMessage =
 	parameter => `' ${parameter} ', a ${typeof parameter}, was passed for the hue argument, but a number, a CSS string or a Color object is expected.
 ${checkDocsMessage}`;
@@ -390,26 +392,33 @@ const argumentErrorMessage = (
 ) => `' ${parameter} ', a ${typeof parameter}, was passed for the ${property} argument, but a number is expected.
 ${checkDocsMessage}`;
 
-const offsetErrorMessage = (
-	property,
-	returnValue
-) => `The "${property}Offset" property return ' ${returnValue} ', a ${typeof returnValue}, but must return a number, or a function returning a number.
-${checkDocsMessage}`;
+export const getErrorMessage = {
+	stringArgument: argument => `Argument must be a valid CSS string, but "${argument}" was passed.
+${checkDocsMessage}`,
 
-const propertyErrorMessage = (
-	property,
-	returnValue
-) => `The "${property}" property return ' ${returnValue} ', a ${typeof returnValue}, but must return a number.
-${checkDocsMessage}`;
-
-const getErrorMessage = {
-	stringArgument: argument => stringArgumentMessage(argument),
 	argument: (index, parameter) => {
 		if (index === "0") return hueErrorMessage(parameter);
 		const property = index === "1" ? "saturation" : index === "2" ? "light" : "alpha";
 		return argumentErrorMessage(property, parameter);
 	},
-	property: (property, returnValue) => propertyErrorMessage(property, returnValue),
-	offset: (property, returnValue) => offsetErrorMessage(property, returnValue),
-	callback: (value, returnValue) => "Callback in your " + offsetErrorMessage(value, returnValue),
+	property: (
+		property,
+		returnValue
+	) => `The "${property}" property return ' ${returnValue} ', a ${typeof returnValue}, but must return a number.
+${checkDocsMessage}`,
+
+	offset: (
+		property,
+		returnValue
+	) => `The "${property}Offset" property return ' ${returnValue} ', a ${typeof returnValue}, but must return a number, or a function returning a number.
+${checkDocsMessage}`,
+
+	callback: (property, returnValue) => `Callback in your "${property}Offset" property return ' ${returnValue} '${
+		typeof returnValue === "undefined" ? "" : ", a " + typeof returnValue
+	}, but must return a number.
+${checkDocsMessage}`,
+
+	callbackIsNaN:
+		property => `Callback in your "${property}Offset" property return ' NaN ' but must return a valid number.
+${checkDocsMessage}`,
 };

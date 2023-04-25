@@ -1,7 +1,7 @@
 {
 	"name": "color",
 	"version": "0.1.0",
-	"description": "Color is a library to easily handle color variation to create dynamic color theme for the web.",
+	"description": "Color is a library to easily handle color variations to create dynamic color theme or complexe color animations for the web.",
 	"main": "Color.js",
 	"scripts": {
 		"test": "jest --watch"

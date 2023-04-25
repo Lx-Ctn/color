@@ -1,5 +1,5 @@
-<h1 align="center" name="top">Color</h1>
-<p align="center">A color library to easily handle color variation to create dynamic color theme.</p>
+<h1 align="center" id="top">Color</h1>
+<p align="center">A color library to easily handle color variations to create dynamic color theme or complexe color animations for the web.</p>
 
 ---
 
