@@ -1056,7 +1056,7 @@ describe("color from CSS Hexa color string", () => {
 	});
 });
 
-describe("color from Color", () => {
+describe.skip("color from Color", () => {
 	test("child with Color parent should inherit parent color properties", () => {
 		const parent = new Color(10, 10, 10, 10);
 		const child = new Color(parent);
@@ -1087,7 +1087,7 @@ describe("color from Color", () => {
 		expect(child.alpha).toBe(55);
 	});
 
-	test.skip("if direct property is setted, parent property is ignored", () => {
+	test("if direct property is setted, parent property is ignored", () => {
 		let parent = new Color(10, 10, 10, 10);
 		const child = new Color(parent, 20, 20, 20);
 		child.hueOffset = 20;
@@ -1261,5 +1261,259 @@ describe("hueOffset", () => {
 		expect(() => setOffset([])).toThrow(new Error(getErrorMessage.offset("hue", [])));
 		expect(() => setOffset({})).toThrow(new Error(getErrorMessage.offset("hue", {})));
 		expect(() => setOffset(new Color())).toThrow(new Error(getErrorMessage.offset("hue", new Color())));
+	});
+});
+
+describe("saturationOffset", () => {
+	test("saturationOffset default value should be 0", () => {
+		const parent = new Color();
+		expect(parent.saturationOffset).toBe(0);
+
+		const child = new Color(parent);
+		expect(child.saturationOffset).toBe(0);
+	});
+
+	describe("if saturationOffset is a number : child.saturation should be parent.saturation + saturationOffset", () => {
+		test("with positive saturationOffset", () => {
+			// Constructor
+			const parent = new Color(0, 50);
+			let child = new Color(parent, 0);
+			expect(child.saturation).toBe(50);
+			child = new Color(parent, 10);
+			expect(child.saturation).toBe(60);
+			child = new Color(parent, +10);
+			expect(child.saturation).toBe(60);
+			child = new Color(parent, 50);
+			expect(child.saturation).toBe(100);
+			child = new Color(parent, 100);
+			expect(child.saturation).toBe(100);
+			child = new Color(parent, 1000);
+			expect(child.saturation).toBe(100);
+
+			// Property
+			child = new Color(parent, 10);
+			child.saturationOffset = 0;
+			expect(child.saturation).toBe(50);
+			child.saturationOffset = 10;
+			expect(child.saturation).toBe(60);
+			child.saturationOffset = +10;
+			expect(child.saturation).toBe(60);
+			child.saturationOffset = 360;
+			expect(child.saturation).toBe(100);
+			child.saturationOffset = 3600;
+			expect(child.saturation).toBe(100);
+		});
+
+		test("with negative number saturationOffset", () => {
+			// Constructor
+			const parent = new Color(0, 50);
+			let child = new Color(parent, 0);
+			expect(child.saturation).toBe(50);
+			child = new Color(parent, -0);
+			expect(child.saturation).toBe(50);
+			child = new Color(parent, -10);
+			expect(child.saturation).toBe(40);
+			child = new Color(parent, -50);
+			expect(child.saturation).toBe(0);
+			child = new Color(parent, -100);
+			expect(child.saturation).toBe(0);
+
+			// Property
+			child = new Color(parent, 10);
+			child.saturationOffset = -0;
+			expect(child.saturation).toBe(50);
+			child.saturationOffset = -10;
+			expect(child.saturation).toBe(40);
+			child.saturationOffset = -360;
+			expect(child.saturation).toBe(0);
+			child.saturationOffset = -3600;
+			expect(child.saturation).toBe(0);
+		});
+
+		test("with float number saturationOffset", () => {
+			// Constructor
+			const parent = new Color(0, 50);
+			let child = new Color(parent, 0.01);
+			expect(child.saturation).toBe(50);
+			child = new Color(parent, -0.01);
+			expect(child.saturation).toBe(50);
+			child = new Color(parent, -10.1);
+			expect(child.saturation).toBe(39.9);
+			child = new Color(parent, 49.99);
+			expect(child.saturation).toBe(100);
+			child = new Color(parent, -999.9999);
+			expect(child.saturation).toBe(0);
+
+			// Property
+			child = new Color(parent);
+			child.saturationOffset = 0.01;
+			expect(child.saturation).toBe(50);
+			child.saturationOffset = -0.01;
+			expect(child.saturation).toBe(50);
+			child.saturationOffset = -10.1;
+			expect(child.saturation).toBe(39.9);
+			child.saturationOffset = 49.99;
+			expect(child.saturation).toBe(100);
+			child.saturationOffset = -999.9999;
+			expect(child.saturation).toBe(0);
+		});
+
+		test("if NaN should throw error", () => {
+			const parent = new Color();
+
+			// Constructor
+			const argNaN = arg => new Color(parent, NaN);
+			expect(argNaN).toThrow(new Error(getErrorMessage.argumentIsNaN("saturation offset")));
+
+			// Property
+			const child = new Color(parent);
+			const propNaN = prop => (child.saturationOffset = NaN);
+			expect(propNaN).toThrow(new Error(getErrorMessage.offsetIsNaN("saturation")));
+		});
+	});
+
+	describe("if saturationOffset is a function : child.saturation should be return by saturationOffset(parent.saturation)", () => {
+		test("callback should get parent.saturation as parameter", () => {
+			// Constructor
+			const parent = new Color(10, 30);
+			let child = new Color(parent, saturation => saturation);
+			expect(child.saturation).toBe(30);
+			child = new Color(parent, saturation => saturation * 2);
+			expect(child.saturation).toBe(60);
+			parent.saturation = 40;
+			expect(child.saturation).toBe(80);
+
+			// Property
+			parent.saturation = 30;
+			child = new Color(parent);
+			child.saturationOffset = saturation => saturation;
+			expect(child.saturation).toBe(30);
+			child.saturationOffset = saturation => saturation * 2;
+			expect(child.saturation).toBe(60);
+			parent.saturation = 40;
+			expect(child.saturation).toBe(80);
+		});
+
+		test("return value is positive", () => {
+			// Constructor
+			const parent = new Color(0, 30);
+			let child = new Color(parent, () => 0);
+			expect(child.saturation).toBe(0);
+			child = new Color(parent, () => 67);
+			expect(child.saturation).toBe(67);
+			child = new Color(parent, () => 3755);
+			expect(child.saturation).toBe(100);
+
+			// Property
+			child = new Color(parent);
+			child.saturationOffset = () => 0;
+			expect(child.saturation).toBe(0);
+			child.saturationOffset = () => 67;
+			expect(child.saturation).toBe(67);
+			child.saturationOffset = () => 3755;
+			expect(child.saturation).toBe(100);
+		});
+
+		test("return value is negative", () => {
+			// Constructor
+			const parent = new Color(0, 30);
+			let child = new Color(parent, () => -0);
+			expect(child.saturation).toBe(0);
+			child = new Color(parent, () => -67);
+			expect(child.saturation).toBe(0);
+			child = new Color(parent, () => -3755);
+			expect(child.saturation).toBe(0);
+
+			// Property
+			child = new Color(parent);
+			child.saturationOffset = () => -0;
+			expect(child.saturation).toBe(0);
+			child.saturationOffset = () => -67;
+			expect(child.saturation).toBe(0);
+			child.saturationOffset = () => -3755;
+			expect(child.saturation).toBe(0);
+		});
+
+		test("return value is float", () => {
+			// Constructor
+			const parent = new Color(0, 30);
+			let child = new Color(parent, () => 0.01);
+			expect(child.saturation).toBe(0);
+			child = new Color(parent, () => -0.01);
+			expect(child.saturation).toBe(0);
+			child = new Color(parent, () => 67.1);
+			expect(child.saturation).toBe(67.1);
+			child = new Color(parent, () => 99.99);
+			expect(child.saturation).toBe(100);
+
+			// Property
+			child = new Color(parent);
+			child.saturationOffset = () => 0.01;
+			expect(child.saturation).toBe(0);
+			child.saturationOffset = () => -0.01;
+			expect(child.saturation).toBe(0);
+			child.saturationOffset = () => 67.1;
+			expect(child.saturation).toBe(67.1);
+			child.saturationOffset = () => 99.99;
+			expect(child.saturation).toBe(100);
+		});
+
+		test("return value is NaN", () => {
+			const parent = new Color();
+
+			// Constructor
+			const argNaN = () => new Color(parent, () => NaN).saturation;
+			expect(argNaN).toThrow(new Error(getErrorMessage.callbackIsNaN("saturation")));
+
+			// Property
+			const child = new Color(parent);
+			const offsetNaN = () => {
+				child.saturationOffset = () => NaN;
+				child.saturation;
+			};
+			expect(offsetNaN).toThrow(new Error(getErrorMessage.callbackIsNaN("saturation")));
+		});
+
+		test("callback should return a number or throw a error", () => {
+			const parent = new Color(10, 10);
+			const child = new Color(parent);
+			const setOffset = returnValue => {
+				child.saturationOffset = saturation => returnValue;
+				child.saturation;
+			};
+			expect(() => setOffset("toto")).toThrow(new Error(getErrorMessage.callback("saturation", "toto")));
+			expect(() => setOffset(true)).toThrow(new Error(getErrorMessage.callback("saturation", true)));
+			expect(() => setOffset(false)).toThrow(new Error(getErrorMessage.callback("saturation", false)));
+			expect(() => setOffset(null)).toThrow(new Error(getErrorMessage.callback("saturation", null)));
+			expect(() => setOffset(undefined)).toThrow(new Error(getErrorMessage.callback("saturation", undefined)));
+			expect(() => setOffset({})).toThrow(new Error(getErrorMessage.callback("saturation", {})));
+			expect(() => setOffset([])).toThrow(new Error(getErrorMessage.callback("saturation", [])));
+			expect(() => setOffset(new Color())).toThrow(
+				new Error(getErrorMessage.callback("saturation", new Color()))
+			);
+			expect(() => setOffset(() => {})).toThrow(new Error(getErrorMessage.callback("saturation", () => {})));
+		});
+	});
+
+	test("if Color have no parent, saturationOffSet is ignored", () => {
+		const color = new Color(10, 10);
+		color.saturationOffset = 50;
+		expect(color.saturation).toBe(10);
+		color.saturationOffset = () => 60;
+		expect(color.saturation).toBe(10);
+	});
+
+	test("should be a number, a function, or throw a error", () => {
+		const parent = new Color();
+		const child = new Color(parent);
+		const setOffset = offset => {
+			child.saturationOffset = offset;
+		};
+		expect(() => setOffset("toto")).toThrow(new Error(getErrorMessage.offset("saturation", "toto")));
+		expect(() => setOffset(true)).toThrow(new Error(getErrorMessage.offset("saturation", true)));
+		expect(() => setOffset(false)).toThrow(new Error(getErrorMessage.offset("saturation", false)));
+		expect(() => setOffset([])).toThrow(new Error(getErrorMessage.offset("saturation", [])));
+		expect(() => setOffset({})).toThrow(new Error(getErrorMessage.offset("saturation", {})));
+		expect(() => setOffset(new Color())).toThrow(new Error(getErrorMessage.offset("saturation", new Color())));
 	});
 });

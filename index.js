@@ -32,7 +32,7 @@
 	- feat : add .parent with .ref alias to get parent color
 	- feat : allowing the remplacement of all color properties through a new color property, 
 				who act like the contructor function, accepting the same arguments, with value, css color strings and Color object
-	- 
+	- feat : switch to TS !
 	*/
 
 const defaultValues = {
@@ -71,10 +71,13 @@ class Color {
 			switch (arguments.length) {
 				case arguments.length >= 5:
 				case 4:
+					checkArgumentOffsetType("alpha", alpha);
 					this.#offset.alpha = alpha ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
 				case 3:
+					checkArgumentOffsetType("light", light);
 					this.#offset.alpha = light ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
 				case 2:
+					checkArgumentOffsetType("saturation", saturation);
 					this.#offset.saturation = saturation ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
 				default:
 					break;
@@ -244,8 +247,20 @@ export default Color;
 const roundAt1Decimal = number => Math.round(number * 10) / 10;
 const isValue = value => value !== null && value !== undefined;
 
-// assignment type cheking :
+// Argument type cheking :
 const offsetTypes = ["number", "function"];
+
+const checkArgumentOffsetType = (property, offset) => {
+	const propOffset = property + " offset";
+	if (!isValue(offset)) return false; // If null || undefined, just ignore the assignment with no error.
+	if (offsetTypes.includes(typeof offset)) {
+		if (Number.isNaN(offset)) throw new Error(getErrorMessage.argumentIsNaN(propOffset));
+		else return true;
+	}
+	throw new Error(getErrorMessage.argument(propOffset, offset));
+};
+
+// assignment type cheking :
 const checkOffsetType = (property, offset) => {
 	if (!isValue(offset)) return false; // If null || undefined, just ignore the assignment with no error.
 	if (offsetTypes.includes(typeof offset)) {
@@ -414,12 +429,12 @@ ${checkDocsMessage("constructor-parameters")}`,
 
 	argument: (index, parameter) => {
 		if (index === "0") return colorErrorMessage(parameter);
-		const property = index === "1" ? "saturation" : index === "2" ? "light" : "alpha";
+		const property = index === "1" ? "saturation" : index === "2" ? "light" : index === "3" ? "alpha" : index;
 		return argumentErrorMessage(property, parameter);
 	},
 	argumentIsNaN: index => {
 		if (index === "0") return colorIsNaNMessage;
-		const property = index === "1" ? "saturation" : index === "2" ? "light" : "alpha";
+		const property = index === "1" ? "saturation" : index === "2" ? "light" : index === "3" ? "alpha" : index;
 		return argumentIsNaNMessage(property);
 	},
 	property: (property, returnValue) => `The "${property}" property return ' ${displayWrongValue(
