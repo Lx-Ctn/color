@@ -472,6 +472,17 @@ describe("hue number value", () => {
 		expect(color.hue).toBe(0.1);
 	});
 
+	test("hue value is NaN", () => {
+		// Constructor
+		const getNan = arg => new Color(NaN);
+		expect(getNan).toThrow(new Error(getErrorMessage.argumentIsNaN("0")));
+
+		// Property
+		const color = new Color();
+		const propNaN = prop => (color.hue = NaN);
+		expect(propNaN).toThrow(new Error(getErrorMessage.propertyIsNaN("hue")));
+	});
+
 	test("wrong hue type should throw error", () => {
 		console.log(getErrorMessage);
 		// Constructor
@@ -599,6 +610,17 @@ describe("saturation number value", () => {
 		expect(color.saturation).toBe(100);
 	});
 
+	test("saturation value is NaN", () => {
+		// Constructor
+		const getNan = arg => new Color(0, NaN);
+		expect(getNan).toThrow(new Error(getErrorMessage.argumentIsNaN("1")));
+
+		// Property
+		const color = new Color();
+		const propNaN = prop => (color.saturation = NaN);
+		expect(propNaN).toThrow(new Error(getErrorMessage.propertyIsNaN("saturation")));
+	});
+
 	test("wrong saturation type should throw error", () => {
 		// Constructor
 		const getNewColor = arg => {
@@ -723,6 +745,17 @@ describe("light number value", () => {
 		expect(color.light).toBe(100);
 	});
 
+	test("light value is NaN", () => {
+		// Constructor
+		const getNan = arg => new Color(0, 100, NaN);
+		expect(getNan).toThrow(new Error(getErrorMessage.argumentIsNaN("2")));
+
+		// Property
+		const color = new Color();
+		const propNaN = prop => (color.light = NaN);
+		expect(propNaN).toThrow(new Error(getErrorMessage.propertyIsNaN("light")));
+	});
+
 	test("wrong light type should throw error", () => {
 		// Constructor
 		const getNewColor = arg => {
@@ -845,6 +878,17 @@ describe("alpha number value", () => {
 		expect(color.alpha).toBe(100);
 		color.alpha = 360.09;
 		expect(color.alpha).toBe(100);
+	});
+
+	test("alpha value is NaN", () => {
+		// Constructor
+		const getNan = arg => new Color(0, 100, 50, NaN);
+		expect(getNan).toThrow(new Error(getErrorMessage.argumentIsNaN("3")));
+
+		// Property
+		const color = new Color();
+		const propNaN = prop => (color.alpha = NaN);
+		expect(propNaN).toThrow(new Error(getErrorMessage.propertyIsNaN("alpha")));
 	});
 
 	test("wrong alpha type should throw error", () => {
@@ -1111,6 +1155,13 @@ describe("hueOffset", () => {
 			expect(child.hue).toBe(10.1);
 			child.hueOffset = 359.9999;
 			expect(child.hue).toBe(0);
+		});
+
+		test("if NaN should throw error", () => {
+			const parent = new Color();
+			const child = new Color(parent);
+			const propNaN = prop => (child.hueOffset = NaN);
+			expect(propNaN).toThrow(new Error(getErrorMessage.offsetIsNaN("hue")));
 		});
 	});
 

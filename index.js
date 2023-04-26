@@ -94,6 +94,7 @@ class Color {
 					const argument = arguments[index];
 					if (typeof argument !== "number" && argument !== null)
 						throw new Error(getErrorMessage.argument(index, argument));
+					if (Number.isNaN(argument)) throw new Error(getErrorMessage.argumentIsNaN(index));
 				}
 			}
 			this.#hue = getFormatedHue(color ?? defaultValues.hue);
@@ -247,12 +248,18 @@ const isValue = value => value !== null && value !== undefined;
 const offsetTypes = ["number", "function"];
 const checkOffsetType = (property, offset) => {
 	if (!isValue(offset)) return false; // If null || undefined, just ignore the assignment with no error.
-	if (offsetTypes.includes(typeof offset)) return true;
+	if (offsetTypes.includes(typeof offset)) {
+		if (Number.isNaN(offset)) throw new Error(getErrorMessage.offsetIsNaN(property));
+		else return true;
+	}
 	throw new Error(getErrorMessage.offset(property, offset));
 };
 const checkPropertyType = (property, value) => {
 	if (!isValue(value)) return false; // If null || undefined, just ignore the assignment with no error.
-	if (typeof value === "number") return true;
+	if (typeof value === "number") {
+		if (Number.isNaN(value)) throw new Error(getErrorMessage.propertyIsNaN(property));
+		else return true;
+	}
 	throw new Error(getErrorMessage.property(property, value));
 };
 
@@ -380,45 +387,67 @@ const hslToRgb = (hue, saturation, light) => {
 /***  Handling errors :  ***/
 /***************************/
 
-const checkDocsMessage = "Check docs at https://github.com/Lx-Ctn/color/#properties- to know more.";
+const displayWrongValue = value => (typeof value !== "function" ? JSON.stringify(value) : value);
+const checkDocsMessage = (where = "the-color-object") =>
+	`Check docs at https://github.com/Lx-Ctn/color/#${where}- to know more.`;
 
-const hueErrorMessage =
-	parameter => `' ${parameter} ', a ${typeof parameter}, was passed for the hue argument, but a number, a CSS string or a Color object is expected.
-${checkDocsMessage}`;
-
-const argumentErrorMessage = (
-	property,
+const colorErrorMessage = parameter => `' ${displayWrongValue(
 	parameter
-) => `' ${parameter} ', a ${typeof parameter}, was passed for the ${property} argument, but a number is expected.
-${checkDocsMessage}`;
+)} ', a ${typeof parameter}, was passed for the hue argument, but a number, a CSS string or a Color object is expected.
+${checkDocsMessage("constructor-parameters")}`;
+
+const argumentErrorMessage = (property, parameter) => `' ${displayWrongValue(
+	parameter
+)} ', a ${typeof parameter}, was passed for the ${property} argument, but a number is expected.
+${checkDocsMessage("constructor-parameters")}`;
+
+const colorIsNaNMessage = `' NaN ' was passed for the hue argument, but a number, a CSS string or a Color object is expected.
+${checkDocsMessage("constructor-parameters")}`;
+
+const argumentIsNaNMessage =
+	property => `' NaN ' was passed for the ${property} argument, but a number is expected.
+${checkDocsMessage("constructor-parameters")}`;
 
 export const getErrorMessage = {
-	stringArgument: argument => `Argument must be a valid CSS string, but "${argument}" was passed.
-${checkDocsMessage}`,
+	stringArgument: argument => `Argument must be a valid CSS color string, but "${argument}" was passed.
+${checkDocsMessage("constructor-parameters")}`,
 
 	argument: (index, parameter) => {
-		if (index === "0") return hueErrorMessage(parameter);
+		if (index === "0") return colorErrorMessage(parameter);
 		const property = index === "1" ? "saturation" : index === "2" ? "light" : "alpha";
 		return argumentErrorMessage(property, parameter);
 	},
-	property: (
+	argumentIsNaN: index => {
+		if (index === "0") return colorIsNaNMessage;
+		const property = index === "1" ? "saturation" : index === "2" ? "light" : "alpha";
+		return argumentIsNaNMessage(property);
+	},
+	property: (property, returnValue) => `The "${property}" property return ' ${displayWrongValue(
+		returnValue
+	)} ', a ${typeof returnValue}, but must return a number.
+${checkDocsMessage("properties")}`,
+
+	propertyIsNaN: property => `The "${property}" property return ' NaN ', but must return a number.
+${checkDocsMessage("properties")}`,
+
+	offset: (property, returnValue) => `The "${property}Offset" property return ' ${displayWrongValue(
+		returnValue
+	)} ', a ${typeof returnValue}, but must return a number, or a function returning a number.
+${checkDocsMessage("properties")}`,
+
+	offsetIsNaN:
+		property => `The "${property}Offset" property return ' NaN ', but must return a number, or a function returning a number.
+${checkDocsMessage("properties")}`,
+
+	callback: (
 		property,
 		returnValue
-	) => `The "${property}" property return ' ${returnValue} ', a ${typeof returnValue}, but must return a number.
-${checkDocsMessage}`,
-
-	offset: (
-		property,
-		returnValue
-	) => `The "${property}Offset" property return ' ${returnValue} ', a ${typeof returnValue}, but must return a number, or a function returning a number.
-${checkDocsMessage}`,
-
-	callback: (property, returnValue) => `Callback in your "${property}Offset" property return ' ${returnValue} '${
+	) => `Callback in your "${property}Offset" property return ' ${displayWrongValue(returnValue)} '${
 		typeof returnValue === "undefined" ? "" : ", a " + typeof returnValue
 	}, but must return a number.
-${checkDocsMessage}`,
+${checkDocsMessage("properties")}`,
 
 	callbackIsNaN:
 		property => `Callback in your "${property}Offset" property return ' NaN ' but must return a valid number.
-${checkDocsMessage}`,
+${checkDocsMessage("properties")}`,
 };
