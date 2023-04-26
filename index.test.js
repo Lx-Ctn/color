@@ -484,7 +484,6 @@ describe("hue number value", () => {
 	});
 
 	test("wrong hue type should throw error", () => {
-		console.log(getErrorMessage);
 		// Constructor
 		const getNewColor = arg => {
 			new Color(arg);
@@ -1056,7 +1055,7 @@ describe("color from CSS Hexa color string", () => {
 	});
 });
 
-describe.skip("color from Color", () => {
+describe("color from Color", () => {
 	test("child with Color parent should inherit parent color properties", () => {
 		const parent = new Color(10, 10, 10, 10);
 		const child = new Color(parent);
@@ -1363,7 +1362,7 @@ describe("saturationOffset", () => {
 
 			// Constructor
 			const argNaN = arg => new Color(parent, NaN);
-			expect(argNaN).toThrow(new Error(getErrorMessage.argumentIsNaN("saturation offset")));
+			expect(argNaN).toThrow(new Error(getErrorMessage.argumentOffsetIsNaN("saturation")));
 
 			// Property
 			const child = new Color(parent);
@@ -1515,5 +1514,257 @@ describe("saturationOffset", () => {
 		expect(() => setOffset([])).toThrow(new Error(getErrorMessage.offset("saturation", [])));
 		expect(() => setOffset({})).toThrow(new Error(getErrorMessage.offset("saturation", {})));
 		expect(() => setOffset(new Color())).toThrow(new Error(getErrorMessage.offset("saturation", new Color())));
+	});
+});
+
+describe("lightOffset", () => {
+	test("lightOffset default value should be 0", () => {
+		const parent = new Color();
+		expect(parent.lightOffset).toBe(0);
+
+		const child = new Color(parent);
+		expect(child.lightOffset).toBe(0);
+	});
+
+	describe("if lightOffset is a number : child.light should be parent.light + lightOffset", () => {
+		test("with positive lightOffset", () => {
+			// Constructor
+			const parent = new Color(null, null, 40);
+			let child = new Color(parent, null, 0);
+			expect(child.light).toBe(40);
+			child = new Color(parent, null, 10);
+			expect(child.light).toBe(50);
+			child = new Color(parent, null, +10);
+			expect(child.light).toBe(50);
+			child = new Color(parent, null, 60);
+			expect(child.light).toBe(100);
+			child = new Color(parent, null, 100);
+			expect(child.light).toBe(100);
+			child = new Color(parent, null, 1000);
+			expect(child.light).toBe(100);
+
+			// Property
+			child = new Color(parent, null, 10);
+			child.lightOffset = 0;
+			expect(child.light).toBe(40);
+			child.lightOffset = 10;
+			expect(child.light).toBe(50);
+			child.lightOffset = +10;
+			expect(child.light).toBe(50);
+			child.lightOffset = 360;
+			expect(child.light).toBe(100);
+			child.lightOffset = 3600;
+			expect(child.light).toBe(100);
+		});
+
+		test("with negative number lightOffset", () => {
+			// Constructor
+			const parent = new Color(null, null, 40);
+			let child = new Color(parent, null, 0);
+			expect(child.light).toBe(40);
+			child = new Color(parent, null, -0);
+			expect(child.light).toBe(40);
+			child = new Color(parent, null, -10);
+			expect(child.light).toBe(30);
+			child = new Color(parent, null, -50);
+			expect(child.light).toBe(0);
+			child = new Color(parent, null, -100);
+			expect(child.light).toBe(0);
+
+			// Property
+			child = new Color(parent, null, 10);
+			child.lightOffset = -0;
+			expect(child.light).toBe(40);
+			child.lightOffset = -10;
+			expect(child.light).toBe(30);
+			child.lightOffset = -360;
+			expect(child.light).toBe(0);
+			child.lightOffset = -3600;
+			expect(child.light).toBe(0);
+		});
+
+		test("with float number lightOffset", () => {
+			// Constructor
+			const parent = new Color(null, null, 40);
+			let child = new Color(parent, null, 0.01);
+			expect(child.light).toBe(40);
+			child = new Color(parent, null, -0.01);
+			expect(child.light).toBe(40);
+			child = new Color(parent, null, -10.1);
+			expect(child.light).toBe(29.9);
+			child = new Color(parent, null, 59.99);
+			expect(child.light).toBe(100);
+			child = new Color(parent, null, -999.9999);
+			expect(child.light).toBe(0);
+
+			// Property
+			child = new Color(parent);
+			child.lightOffset = 0.01;
+			expect(child.light).toBe(40);
+			child.lightOffset = -0.01;
+			expect(child.light).toBe(40);
+			child.lightOffset = -10.1;
+			expect(child.light).toBe(29.9);
+			child.lightOffset = 59.99;
+			expect(child.light).toBe(100);
+			child.lightOffset = -999.9999;
+			expect(child.light).toBe(0);
+		});
+
+		test("if NaN should throw error", () => {
+			const parent = new Color();
+
+			// Constructor
+			const argNaN = arg => new Color(parent, null, NaN);
+			expect(argNaN).toThrow(new Error(getErrorMessage.argumentOffsetIsNaN("light")));
+
+			// Property
+			const child = new Color(parent);
+			const propNaN = prop => (child.lightOffset = NaN);
+			expect(propNaN).toThrow(new Error(getErrorMessage.offsetIsNaN("light")));
+		});
+	});
+
+	describe("if lightOffset is a function : child.light should be return by lightOffset(parent.light)", () => {
+		test("callback should get parent.light as parameter", () => {
+			// Constructor
+			const parent = new Color(null, null, 30);
+			let child = new Color(parent, null, light => light);
+			expect(child.light).toBe(30);
+			child = new Color(parent, null, light => light * 2);
+			expect(child.light).toBe(60);
+			parent.light = 40;
+			expect(child.light).toBe(80);
+
+			// Property
+			parent.light = 30;
+			child = new Color(parent);
+			child.lightOffset = light => light;
+			expect(child.light).toBe(30);
+			child.lightOffset = light => light * 2;
+			expect(child.light).toBe(60);
+			parent.light = 40;
+			expect(child.light).toBe(80);
+		});
+
+		test("return value is positive", () => {
+			// Constructor
+			const parent = new Color(null, null, 30);
+			let child = new Color(parent, null, () => 0);
+			expect(child.light).toBe(0);
+			child = new Color(parent, null, () => 67);
+			expect(child.light).toBe(67);
+			child = new Color(parent, null, () => 3755);
+			expect(child.light).toBe(100);
+
+			// Property
+			child = new Color(parent);
+			child.lightOffset = () => 0;
+			expect(child.light).toBe(0);
+			child.lightOffset = () => 67;
+			expect(child.light).toBe(67);
+			child.lightOffset = () => 3755;
+			expect(child.light).toBe(100);
+		});
+
+		test("return value is negative", () => {
+			// Constructor
+			const parent = new Color(null, null, 30);
+			let child = new Color(parent, null, () => -0);
+			expect(child.light).toBe(0);
+			child = new Color(parent, null, () => -67);
+			expect(child.light).toBe(0);
+			child = new Color(parent, null, () => -3755);
+			expect(child.light).toBe(0);
+
+			// Property
+			child = new Color(parent);
+			child.lightOffset = () => -0;
+			expect(child.light).toBe(0);
+			child.lightOffset = () => -67;
+			expect(child.light).toBe(0);
+			child.lightOffset = () => -3755;
+			expect(child.light).toBe(0);
+		});
+
+		test("return value is float", () => {
+			// Constructor
+			const parent = new Color(null, null, 30);
+			let child = new Color(parent, null, () => 0.01);
+			expect(child.light).toBe(0);
+			child = new Color(parent, null, () => -0.01);
+			expect(child.light).toBe(0);
+			child = new Color(parent, null, () => 67.1);
+			expect(child.light).toBe(67.1);
+			child = new Color(parent, null, () => 99.99);
+			expect(child.light).toBe(100);
+
+			// Property
+			child = new Color(parent);
+			child.lightOffset = () => 0.01;
+			expect(child.light).toBe(0);
+			child.lightOffset = () => -0.01;
+			expect(child.light).toBe(0);
+			child.lightOffset = () => 67.1;
+			expect(child.light).toBe(67.1);
+			child.lightOffset = () => 99.99;
+			expect(child.light).toBe(100);
+		});
+
+		test("return value is NaN", () => {
+			const parent = new Color();
+
+			// Constructor
+			const argNaN = () => new Color(parent, null, () => NaN).light;
+			expect(argNaN).toThrow(new Error(getErrorMessage.callbackIsNaN("light")));
+
+			// Property
+			const child = new Color(parent);
+			const offsetNaN = () => {
+				child.lightOffset = () => NaN;
+				child.light;
+			};
+			expect(offsetNaN).toThrow(new Error(getErrorMessage.callbackIsNaN("light")));
+		});
+
+		test("callback should return a number or throw a error", () => {
+			const parent = new Color(10, 10, 10);
+			const child = new Color(parent);
+			const setOffset = returnValue => {
+				child.lightOffset = light => returnValue;
+				child.light;
+			};
+			expect(() => setOffset("toto")).toThrow(new Error(getErrorMessage.callback("light", "toto")));
+			expect(() => setOffset(true)).toThrow(new Error(getErrorMessage.callback("light", true)));
+			expect(() => setOffset(false)).toThrow(new Error(getErrorMessage.callback("light", false)));
+			expect(() => setOffset(null)).toThrow(new Error(getErrorMessage.callback("light", null)));
+			expect(() => setOffset(undefined)).toThrow(new Error(getErrorMessage.callback("light", undefined)));
+			expect(() => setOffset({})).toThrow(new Error(getErrorMessage.callback("light", {})));
+			expect(() => setOffset([])).toThrow(new Error(getErrorMessage.callback("light", [])));
+			expect(() => setOffset(new Color())).toThrow(new Error(getErrorMessage.callback("light", new Color())));
+			expect(() => setOffset(() => {})).toThrow(new Error(getErrorMessage.callback("light", () => {})));
+		});
+	});
+
+	test("if Color have no parent, lightOffSet is ignored", () => {
+		const color = new Color(10, 10, 10);
+		color.lightOffset = 50;
+		expect(color.light).toBe(10);
+		color.lightOffset = () => 60;
+		expect(color.light).toBe(10);
+	});
+
+	test("should be a number, a function, or throw a error", () => {
+		const parent = new Color();
+		const child = new Color(parent);
+		const setOffset = offset => {
+			child.lightOffset = offset;
+		};
+		expect(() => setOffset("toto")).toThrow(new Error(getErrorMessage.offset("light", "toto")));
+		expect(() => setOffset(true)).toThrow(new Error(getErrorMessage.offset("light", true)));
+		expect(() => setOffset(false)).toThrow(new Error(getErrorMessage.offset("light", false)));
+		expect(() => setOffset([])).toThrow(new Error(getErrorMessage.offset("light", [])));
+		expect(() => setOffset({})).toThrow(new Error(getErrorMessage.offset("light", {})));
+		expect(() => setOffset(new Color())).toThrow(new Error(getErrorMessage.offset("light", new Color())));
 	});
 });

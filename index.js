@@ -75,7 +75,7 @@ class Color {
 					this.#offset.alpha = alpha ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
 				case 3:
 					checkArgumentOffsetType("light", light);
-					this.#offset.alpha = light ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
+					this.#offset.light = light ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
 				case 2:
 					checkArgumentOffsetType("saturation", saturation);
 					this.#offset.saturation = saturation ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
@@ -251,13 +251,12 @@ const isValue = value => value !== null && value !== undefined;
 const offsetTypes = ["number", "function"];
 
 const checkArgumentOffsetType = (property, offset) => {
-	const propOffset = property + " offset";
 	if (!isValue(offset)) return false; // If null || undefined, just ignore the assignment with no error.
 	if (offsetTypes.includes(typeof offset)) {
-		if (Number.isNaN(offset)) throw new Error(getErrorMessage.argumentIsNaN(propOffset));
+		if (Number.isNaN(offset)) throw new Error(getErrorMessage.argumentOffsetIsNaN(property));
 		else return true;
 	}
-	throw new Error(getErrorMessage.argument(propOffset, offset));
+	throw new Error(getErrorMessage.argumentOffset(property, offset));
 };
 
 // assignment type cheking :
@@ -429,12 +428,12 @@ ${checkDocsMessage("constructor-parameters")}`,
 
 	argument: (index, parameter) => {
 		if (index === "0") return colorErrorMessage(parameter);
-		const property = index === "1" ? "saturation" : index === "2" ? "light" : index === "3" ? "alpha" : index;
+		const property = index === "1" ? "saturation" : index === "2" ? "light" : "alpha";
 		return argumentErrorMessage(property, parameter);
 	},
 	argumentIsNaN: index => {
 		if (index === "0") return colorIsNaNMessage;
-		const property = index === "1" ? "saturation" : index === "2" ? "light" : index === "3" ? "alpha" : index;
+		const property = index === "1" ? "saturation" : index === "2" ? "light" : "alpha";
 		return argumentIsNaNMessage(property);
 	},
 	property: (property, returnValue) => `The "${property}" property return ' ${displayWrongValue(
@@ -443,6 +442,15 @@ ${checkDocsMessage("constructor-parameters")}`,
 ${checkDocsMessage("properties")}`,
 
 	propertyIsNaN: property => `The "${property}" property return ' NaN ', but must return a number.
+${checkDocsMessage("properties")}`,
+
+	argumentOffset: (property, returnValue) => `' ${displayWrongValue(
+		returnValue
+	)} ', a ${typeof returnValue}, was passed for the ${property} offset argument, but a number is expected, or a function returning a number.
+${checkDocsMessage("properties")}`,
+
+	argumentOffsetIsNaN:
+		property => `' NaN ' was passed for the ${property} offset argument, but a number is expected, or a function returning a number.
 ${checkDocsMessage("properties")}`,
 
 	offset: (property, returnValue) => `The "${property}Offset" property return ' ${displayWrongValue(
