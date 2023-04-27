@@ -94,6 +94,7 @@ class Color {
 				// If we get a hue number value :
 			} else {
 				for (const index in arguments) {
+					if (index > 3) continue;
 					const argument = arguments[index];
 					if (typeof argument !== "number" && argument !== null)
 						throw new Error(getErrorMessage.argument(index, argument));
@@ -221,7 +222,7 @@ class Color {
 		const [red, green, blue] = hslToRgb(this.hue, this.saturation, this.light);
 		return this.alpha === 100
 			? `rgb(${red}, ${green}, ${blue})`
-			: `rgba(${red}, ${green}, ${blue}, ${this.alpha / 100})`;
+			: `rgba(${red}, ${green}, ${blue}, ${(this.alpha * 10) / 1000})`; // prevent decimal precision problem.
 	}
 	toHex() {
 		const getHex = value => {

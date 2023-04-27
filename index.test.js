@@ -14,6 +14,8 @@ function allDefaultParamTest(color) {
 	expect(color.alphaOffset).toBe(0);
 }
 
+// null || undefined :
+
 describe("undefined parameters", () => {
 	test("Should have all default value with undefined constructor parameters", () => {
 		const color = new Color();
@@ -345,6 +347,8 @@ describe("null parameters", () => {
 		expect(blue.toHsl()).toBe("hsla(0, 100%, 50%, 70%)");
 	});
 });
+
+// Number values :
 
 describe("hue number value", () => {
 	test("hue default value should be 0", () => {
@@ -916,6 +920,8 @@ describe("alpha number value", () => {
 	});
 });
 
+// Other color constructor :
+
 describe("color from CSS Hexa color string", () => {
 	test("#RGB syntax", () => {
 		// Constructor
@@ -1104,6 +1110,8 @@ describe("color from Color", () => {
 		expect(child.alpha).toBe(20);
 	});
 });
+
+// Offset :
 
 describe("hueOffset", () => {
 	test("hueOffset default value should be 0", () => {
@@ -1766,5 +1774,453 @@ describe("lightOffset", () => {
 		expect(() => setOffset([])).toThrow(new Error(getErrorMessage.offset("light", [])));
 		expect(() => setOffset({})).toThrow(new Error(getErrorMessage.offset("light", {})));
 		expect(() => setOffset(new Color())).toThrow(new Error(getErrorMessage.offset("light", new Color())));
+	});
+});
+
+describe("alphaOffset", () => {
+	test("alphaOffset default value should be 0", () => {
+		const parent = new Color();
+		expect(parent.alphaOffset).toBe(0);
+
+		const child = new Color(parent);
+		expect(child.alphaOffset).toBe(0);
+	});
+
+	describe("if alphaOffset is a number : child.alpha should be parent.alpha + alphaOffset", () => {
+		test("with positive alphaOffset", () => {
+			// Constructor
+			const parent = new Color(null, null, null, 40);
+			let child = new Color(parent, null, null, 0);
+			expect(child.alpha).toBe(40);
+			child = new Color(parent, null, null, 10);
+			expect(child.alpha).toBe(50);
+			child = new Color(parent, null, null, +10);
+			expect(child.alpha).toBe(50);
+			child = new Color(parent, null, null, 60);
+			expect(child.alpha).toBe(100);
+			child = new Color(parent, null, null, 100);
+			expect(child.alpha).toBe(100);
+			child = new Color(parent, null, null, 1000);
+			expect(child.alpha).toBe(100);
+
+			// Property
+			child = new Color(parent, null, null, 10);
+			child.alphaOffset = 0;
+			expect(child.alpha).toBe(40);
+			child.alphaOffset = 10;
+			expect(child.alpha).toBe(50);
+			child.alphaOffset = +10;
+			expect(child.alpha).toBe(50);
+			child.alphaOffset = 360;
+			expect(child.alpha).toBe(100);
+			child.alphaOffset = 3600;
+			expect(child.alpha).toBe(100);
+		});
+
+		test("with negative number alphaOffset", () => {
+			// Constructor
+			const parent = new Color(null, null, null, 40);
+			let child = new Color(parent, null, null, 0);
+			expect(child.alpha).toBe(40);
+			child = new Color(parent, null, null, -0);
+			expect(child.alpha).toBe(40);
+			child = new Color(parent, null, null, -10);
+			expect(child.alpha).toBe(30);
+			child = new Color(parent, null, null, -50);
+			expect(child.alpha).toBe(0);
+			child = new Color(parent, null, null, -100);
+			expect(child.alpha).toBe(0);
+
+			// Property
+			child = new Color(parent, null, null, 10);
+			child.alphaOffset = -0;
+			expect(child.alpha).toBe(40);
+			child.alphaOffset = -10;
+			expect(child.alpha).toBe(30);
+			child.alphaOffset = -360;
+			expect(child.alpha).toBe(0);
+			child.alphaOffset = -3600;
+			expect(child.alpha).toBe(0);
+		});
+
+		test("with float number alphaOffset", () => {
+			// Constructor
+			const parent = new Color(null, null, null, 40);
+			let child = new Color(parent, null, null, 0.01);
+			expect(child.alpha).toBe(40);
+			child = new Color(parent, null, null, -0.01);
+			expect(child.alpha).toBe(40);
+			child = new Color(parent, null, null, -10.1);
+			expect(child.alpha).toBe(29.9);
+			child = new Color(parent, null, null, 59.99);
+			expect(child.alpha).toBe(100);
+			child = new Color(parent, null, null, -999.9999);
+			expect(child.alpha).toBe(0);
+
+			// Property
+			child = new Color(parent);
+			child.alphaOffset = 0.01;
+			expect(child.alpha).toBe(40);
+			child.alphaOffset = -0.01;
+			expect(child.alpha).toBe(40);
+			child.alphaOffset = -10.1;
+			expect(child.alpha).toBe(29.9);
+			child.alphaOffset = 59.99;
+			expect(child.alpha).toBe(100);
+			child.alphaOffset = -999.9999;
+			expect(child.alpha).toBe(0);
+		});
+
+		test("if NaN should throw error", () => {
+			const parent = new Color();
+
+			// Constructor
+			const argNaN = arg => new Color(parent, null, null, NaN);
+			expect(argNaN).toThrow(new Error(getErrorMessage.argumentOffsetIsNaN("alpha")));
+
+			// Property
+			const child = new Color(parent);
+			const propNaN = prop => (child.alphaOffset = NaN);
+			expect(propNaN).toThrow(new Error(getErrorMessage.offsetIsNaN("alpha")));
+		});
+	});
+
+	describe("if alphaOffset is a function : child.alpha should be return by alphaOffset(parent.alpha)", () => {
+		test("callback should get parent.alpha as parameter", () => {
+			// Constructor
+			const parent = new Color(null, null, null, 30);
+			let child = new Color(parent, null, null, alpha => alpha);
+			expect(child.alpha).toBe(30);
+			child = new Color(parent, null, null, alpha => alpha * 2);
+			expect(child.alpha).toBe(60);
+			parent.alpha = 40;
+			expect(child.alpha).toBe(80);
+
+			// Property
+			parent.alpha = 30;
+			child = new Color(parent);
+			child.alphaOffset = alpha => alpha;
+			expect(child.alpha).toBe(30);
+			child.alphaOffset = alpha => alpha * 2;
+			expect(child.alpha).toBe(60);
+			parent.alpha = 40;
+			expect(child.alpha).toBe(80);
+		});
+
+		test("return value is positive", () => {
+			// Constructor
+			const parent = new Color(null, null, null, 30);
+			let child = new Color(parent, null, null, () => 0);
+			expect(child.alpha).toBe(0);
+			child = new Color(parent, null, null, () => 67);
+			expect(child.alpha).toBe(67);
+			child = new Color(parent, null, null, () => 3755);
+			expect(child.alpha).toBe(100);
+
+			// Property
+			child = new Color(parent);
+			child.alphaOffset = () => 0;
+			expect(child.alpha).toBe(0);
+			child.alphaOffset = () => 67;
+			expect(child.alpha).toBe(67);
+			child.alphaOffset = () => 3755;
+			expect(child.alpha).toBe(100);
+		});
+
+		test("return value is negative", () => {
+			// Constructor
+			const parent = new Color(null, null, null, 30);
+			let child = new Color(parent, null, null, () => -0);
+			expect(child.alpha).toBe(0);
+			child = new Color(parent, null, null, () => -67);
+			expect(child.alpha).toBe(0);
+			child = new Color(parent, null, null, () => -3755);
+			expect(child.alpha).toBe(0);
+
+			// Property
+			child = new Color(parent);
+			child.alphaOffset = () => -0;
+			expect(child.alpha).toBe(0);
+			child.alphaOffset = () => -67;
+			expect(child.alpha).toBe(0);
+			child.alphaOffset = () => -3755;
+			expect(child.alpha).toBe(0);
+		});
+
+		test("return value is float", () => {
+			// Constructor
+			const parent = new Color(null, null, null, 30);
+			let child = new Color(parent, null, null, () => 0.01);
+			expect(child.alpha).toBe(0);
+			child = new Color(parent, null, null, () => -0.01);
+			expect(child.alpha).toBe(0);
+			child = new Color(parent, null, null, () => 67.1);
+			expect(child.alpha).toBe(67.1);
+			child = new Color(parent, null, null, () => 99.99);
+			expect(child.alpha).toBe(100);
+
+			// Property
+			child = new Color(parent);
+			child.alphaOffset = () => 0.01;
+			expect(child.alpha).toBe(0);
+			child.alphaOffset = () => -0.01;
+			expect(child.alpha).toBe(0);
+			child.alphaOffset = () => 67.1;
+			expect(child.alpha).toBe(67.1);
+			child.alphaOffset = () => 99.99;
+			expect(child.alpha).toBe(100);
+		});
+
+		test("return value is NaN", () => {
+			const parent = new Color();
+
+			// Constructor
+			const argNaN = () => new Color(parent, null, null, () => NaN).alpha;
+			expect(argNaN).toThrow(new Error(getErrorMessage.callbackIsNaN("alpha")));
+
+			// Property
+			const child = new Color(parent);
+			const offsetNaN = () => {
+				child.alphaOffset = () => NaN;
+				child.alpha;
+			};
+			expect(offsetNaN).toThrow(new Error(getErrorMessage.callbackIsNaN("alpha")));
+		});
+
+		test("callback should return a number or throw a error", () => {
+			const parent = new Color(10, 10, 10, 10);
+			const child = new Color(parent);
+			const setOffset = returnValue => {
+				child.alphaOffset = alpha => returnValue;
+				child.alpha;
+			};
+			expect(() => setOffset("toto")).toThrow(new Error(getErrorMessage.callback("alpha", "toto")));
+			expect(() => setOffset(true)).toThrow(new Error(getErrorMessage.callback("alpha", true)));
+			expect(() => setOffset(false)).toThrow(new Error(getErrorMessage.callback("alpha", false)));
+			expect(() => setOffset(null)).toThrow(new Error(getErrorMessage.callback("alpha", null)));
+			expect(() => setOffset(undefined)).toThrow(new Error(getErrorMessage.callback("alpha", undefined)));
+			expect(() => setOffset({})).toThrow(new Error(getErrorMessage.callback("alpha", {})));
+			expect(() => setOffset([])).toThrow(new Error(getErrorMessage.callback("alpha", [])));
+			expect(() => setOffset(new Color())).toThrow(new Error(getErrorMessage.callback("alpha", new Color())));
+			expect(() => setOffset(() => {})).toThrow(new Error(getErrorMessage.callback("alpha", () => {})));
+		});
+	});
+
+	test("if Color have no parent, alphaOffSet is ignored", () => {
+		const color = new Color(10, 10, 10, 10);
+		color.alphaOffset = 50;
+		expect(color.alpha).toBe(10);
+		color.alphaOffset = () => 60;
+		expect(color.alpha).toBe(10);
+	});
+
+	test("should be a number, a function, or throw a error", () => {
+		const parent = new Color();
+		const child = new Color(parent);
+		const setOffset = offset => {
+			child.alphaOffset = offset;
+		};
+		expect(() => setOffset("toto")).toThrow(new Error(getErrorMessage.offset("alpha", "toto")));
+		expect(() => setOffset(true)).toThrow(new Error(getErrorMessage.offset("alpha", true)));
+		expect(() => setOffset(false)).toThrow(new Error(getErrorMessage.offset("alpha", false)));
+		expect(() => setOffset([])).toThrow(new Error(getErrorMessage.offset("alpha", [])));
+		expect(() => setOffset({})).toThrow(new Error(getErrorMessage.offset("alpha", {})));
+		expect(() => setOffset(new Color())).toThrow(new Error(getErrorMessage.offset("alpha", new Color())));
+	});
+});
+
+// Extra arguments in constructor :
+
+describe("extra argument should be ignored", () => {
+	test("For number color constructor : should not throw any error", () => {
+		const testArg = arg => new Color(null, null, null, null, arg);
+		expect(() => testArg(0)).not.toThrow();
+		expect(() => testArg(NaN)).not.toThrow();
+		expect(() => testArg(null)).not.toThrow();
+		expect(() => testArg(undefined)).not.toThrow();
+		expect(() => testArg("toto")).not.toThrow();
+		expect(() => testArg(true)).not.toThrow();
+		expect(() => testArg(false)).not.toThrow();
+		expect(() => testArg({})).not.toThrow();
+		expect(() => testArg([])).not.toThrow();
+		expect(() => testArg(() => {})).not.toThrow();
+	});
+
+	test("For number color constructor : should not chang any properties", () => {
+		const color = new Color(null, null, null, null, 10);
+		expect(color.hue).toBe(0);
+		expect(color.saturation).toBe(100);
+		expect(color.light).toBe(50);
+		expect(color.alpha).toBe(100);
+		expect(color.hueOffset).toBe(0);
+		expect(color.saturationOffset).toBe(0);
+		expect(color.lightOffset).toBe(0);
+		expect(color.alphaOffset).toBe(0);
+	});
+
+	test("For CSS color string constructor : should not throw any error", () => {
+		const testArg = arg => new Color("#f00", arg);
+		expect(() => testArg(0)).not.toThrow();
+		expect(() => testArg(NaN)).not.toThrow();
+		expect(() => testArg(null)).not.toThrow();
+		expect(() => testArg(undefined)).not.toThrow();
+		expect(() => testArg("toto")).not.toThrow();
+		expect(() => testArg(true)).not.toThrow();
+		expect(() => testArg(false)).not.toThrow();
+		expect(() => testArg({})).not.toThrow();
+		expect(() => testArg([])).not.toThrow();
+		expect(() => testArg(() => {})).not.toThrow();
+	});
+
+	test("For CSS color string constructor : should not chang any properties", () => {
+		const color = new Color("#f00", 10);
+		expect(color.hue).toBe(0);
+		expect(color.saturation).toBe(100);
+		expect(color.light).toBe(50);
+		expect(color.alpha).toBe(100);
+		expect(color.hueOffset).toBe(0);
+		expect(color.saturationOffset).toBe(0);
+		expect(color.lightOffset).toBe(0);
+		expect(color.alphaOffset).toBe(0);
+	});
+
+	test("For Color + offset constructor : should not throw any error", () => {
+		const parent = new Color();
+		const testArg = arg => new Color(parent, null, null, null, arg);
+		expect(() => testArg(0)).not.toThrow();
+		expect(() => testArg(NaN)).not.toThrow();
+		expect(() => testArg(null)).not.toThrow();
+		expect(() => testArg(undefined)).not.toThrow();
+		expect(() => testArg("toto")).not.toThrow();
+		expect(() => testArg(true)).not.toThrow();
+		expect(() => testArg(false)).not.toThrow();
+		expect(() => testArg({})).not.toThrow();
+		expect(() => testArg([])).not.toThrow();
+		expect(() => testArg(() => {})).not.toThrow();
+	});
+
+	test("For Color + offset  constructor : should not chang any properties", () => {
+		const parent = new Color();
+		const color = new Color(parent, null, null, null, 10);
+		expect(color.hue).toBe(0);
+		expect(color.saturation).toBe(100);
+		expect(color.light).toBe(50);
+		expect(color.alpha).toBe(100);
+		expect(color.hueOffset).toBe(0);
+		expect(color.saturationOffset).toBe(0);
+		expect(color.lightOffset).toBe(0);
+		expect(color.alphaOffset).toBe(0);
+	});
+});
+
+// Methods :
+
+describe("export to hsl CSS color String", () => {
+	test("hsl values should reflect color proporties", () => {
+		let color = new Color();
+		expect(color.toHsl()).toBe("hsl(0, 100%, 50%)");
+		color = new Color(27, 33, 47);
+		expect(color.toHsl()).toBe("hsl(27, 33%, 47%)");
+		color.hue = 77;
+		color.saturation = 77;
+		color.light = 77;
+		expect(color.toHsl()).toBe("hsl(77, 77%, 77%)");
+	});
+
+	test("if alpha != 100%,  hsl should switch to hsla", () => {
+		let color = new Color(1, 2, 3, 4);
+		expect(color.toHsl()).toBe("hsla(1, 2%, 3%, 4%)");
+		color.alpha = 77;
+		expect(color.toHsl()).toBe("hsla(1, 2%, 3%, 77%)");
+	});
+
+	test("hsl values should accept float to 1 decimal", () => {
+		let color = new Color(9.9, 9.9, 9.9);
+		expect(color.toHsl()).toBe("hsl(9.9, 9.9%, 9.9%)");
+		color = new Color(9.9, 9.9, 9.9, 9.9);
+		expect(color.toHsl()).toBe("hsla(9.9, 9.9%, 9.9%, 9.9%)");
+		color = new Color(9.99, 9.99, 9.99, 9.99);
+		expect(color.toHsl()).toBe("hsla(10, 10%, 10%, 10%)");
+	});
+});
+
+describe("export to hexa CSS color String", () => {
+	test("hexa values should reflect color proporties", () => {
+		let color = new Color();
+		expect(color.toHex()).toBe("#ff0000");
+		color = new Color(240, 0, 100);
+		expect(color.toHex()).toBe("#ffffff");
+		color.hue = 120;
+		color.saturation = 100;
+		color.light = 50;
+		expect(color.toHex()).toBe("#00ff00");
+	});
+
+	test("if alpha != 100%, the string should switch to the 8 values format", () => {
+		let color = new Color(0, 100, 50, 50);
+		expect(color.toHex()).toBe("#ff000080");
+		color = new Color("#12345678");
+		expect(color.toHex()).toBe("#12345678");
+	});
+
+	test("hexa values should keep precision thaks to properties float to 1 decimal", () => {
+		let color = new Color(9.9, 9.9, 9.9);
+		expect(color.toHex()).toBe("#1c1817");
+		color = new Color(9.9, 9.9, 9.9, 9.9);
+		expect(color.toHex()).toBe("#1c181719");
+		color = new Color(9.99, 9.99, 9.99, 9.99);
+		expect(color.toHex()).toBe("#1c18171a");
+	});
+
+	test("if hexa value are pass as constructor, toHex should be the same", () => {
+		let color = new Color("#ffffff");
+		expect(color.toHex()).toBe("#ffffff");
+		color = new Color("#000000");
+		expect(color.toHex()).toBe("#000000");
+		color = new Color("#12345678");
+		expect(color.toHex()).toBe("#12345678");
+		color = new Color("#abcdef02");
+		expect(color.toHex()).toBe("#abcdef02");
+	});
+
+	test("if hexa value are pass as constructor, toHex should be the same, and vice-versa", () => {
+		let color = new Color("#12345678");
+		expect(color.toHsl()).toBe("hsla(210, 65.4%, 20.4%, 47.1%)");
+		color = new Color(210, 65.4, 20.4, 47.1);
+		expect(color.toHex()).toBe("#12345678");
+
+		color = new Color("#abcdef02");
+		expect(color.toHsl()).toBe("hsla(210, 68%, 80.4%, 0.8%)");
+		color = new Color(210, 68, 80.4, 0.8);
+		expect(color.toHex()).toBe("#abcdef02");
+	});
+});
+
+describe("export to RGB CSS color String", () => {
+	test("RGB values should reflect color proporties", () => {
+		let color = new Color();
+		expect(color.toRgb()).toBe("rgb(255, 0, 0)");
+		color = new Color(240, 0, 100);
+		expect(color.toRgb()).toBe("rgb(255, 255, 255)");
+		color.hue = 120;
+		color.saturation = 100;
+		color.light = 50;
+		expect(color.toRgb()).toBe("rgb(0, 255, 0)");
+	});
+
+	test("if alpha != 100%, the string should switch to rgba()", () => {
+		let color = new Color(0, 100, 50, 50);
+		expect(color.toRgb()).toBe("rgba(255, 0, 0, 0.5)");
+		color = new Color("#12345678");
+		expect(color.toRgb()).toBe("rgba(18, 52, 86, 0.471)");
+	});
+
+	test("hexa values should keep precision thaks to properties float to 1 decimal", () => {
+		let color = new Color(9.9, 9.9, 9.9);
+		expect(color.toRgb()).toBe("rgb(28, 24, 23)");
+		color = new Color(9.9, 9.9, 9.9, 9.9);
+		expect(color.toRgb()).toBe("rgba(28, 24, 23, 0.099)");
+		color = new Color(9.99, 9.99, 9.99, 9.99);
+		expect(color.toRgb()).toBe("rgba(28, 24, 23, 0.1)");
 	});
 });
