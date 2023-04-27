@@ -1,5 +1,5 @@
-<h1 align="center" name="top">Color</h1>
-<p align="center">A color API to easily handle color variation to create dynamic color theme.</p>
+<h1 align="center" id="top">Color</h1>
+<p align="center">A color library to easily handle color variations to create dynamic color theme or complexe color animations for the web.</p>
 
 ---
 
@@ -21,7 +21,7 @@
       <li><a href="#the-hsl-solution-">The HSL solution</a></li>
       </ul>
    </li>
-   <li><a href="#the-color-api-">The Color API</a></li>
+   <li><a href="#the-color-object-">The Color object</a></li>
       <ul>
       <li><a href="#create-a-color-">Creation of a Color</a></li>
       <li><a href="#create-a-child-color-">Creation of a child Color</a></li>
@@ -262,7 +262,7 @@ This is how we get <i>tone</i> variation.
 
 <br>
 
-## The Color API :
+## The Color object :
 
 <br>
 
@@ -466,11 +466,13 @@ This value will be fixed, independent of the reference value.
    -  If <code>Color</code> is a child with no own hue value:
       <code>hue</code> will return the value of the parent with the offset applied.
    -  Default value : `0` (red).
--  Setter <code>Color.hue = number</code> : No need to format the number between 0 and 360, it will still work outside the usual position.
-   > For exemple `-120` will have the same result as `240` (-120 + 360 = 240 : same position on the wheel).
-   </dd></dl></dd>
-   </dl>
-   <br>
+-  Setter <code>Color.hue = number</code> :
+   -  If `null` or `undefined`, assignment will be ignored.
+   -  No need to format the number between 0 and 360, it will still work outside the usual position.
+      > For exemple `-120` will have the same result as `240` (-120 + 360 = 240 : same position on the wheel).
+        </dd></dl></dd>
+        </dl>
+        <br>
 
 <dl>
 <code><b>Color.saturation</b></code>
@@ -484,6 +486,7 @@ This value will be fixed, independent of the reference value.
 -  Setter <code>Color.saturation = number</code> :
    -  Every number below `0` will set the saturation to `0`.
    -  Every number above `100` will set the saturation to `100`.
+   -  If `null` or `undefined`, assignment will be ignored.
    </dd></dl></dd>
    </dl>
    <br>
@@ -500,6 +503,7 @@ This value will be fixed, independent of the reference value.
 -  Setter <code>Color.light = number</code> :
    -  Every number below `0` will set the light to `0`.
    -  Every number above `100` will set the light to `100`.
+   -  If `null` or `undefined`, assignment will be ignored.
    </dd></dl></dd>
    </dl>
    <br>
@@ -516,6 +520,7 @@ This value will be fixed, independent of the reference value.
 -  Setter <code>Color.alpha = number</code> :
    -  Every number below `0` will set the alpha to `0`.
    -  Every number above `100` will set the alpha to `100`.
+   -  If `null` or `undefined`, assignment will be ignored.
    </dd></dl></dd>
    </dl>
    <br>
@@ -531,6 +536,7 @@ This value will be fixed, independent of the reference value.
 -  Setter <code>Color.hueOffset = number | function</code>.
    -  If `hueOffset` is a _number_, the `hue` value will be `Parent.hue` + `Child.hueOffset`.
    -  If `hueOffset` is a _function_, the `Parent.hue` value will be given as parameter, and the function must return the wanted `hue` value.
+   -  If `null` or `undefined`, assignment will be ignored.
    </dd></dl></dd>
    </dl>
    <br>
@@ -546,6 +552,7 @@ This value will be fixed, independent of the reference value.
 -  Setter <code>Color.saturationOffset = number | function</code>.
    -  If `saturationOffset` is a _number_, the `saturation` value will be `Parent.saturation` + `Child.saturationOffset`.
    -  If `saturationOffset` is a _function_, the `Parent.saturation` value will be given as parameter, and the function must return the wanted `saturation` value.
+   -  If `null` or `undefined`, assignment will be ignored.
    </dd></dl></dd>
    </dl>
    <br>
@@ -561,6 +568,7 @@ This value will be fixed, independent of the reference value.
 -  Setter <code>Color.lightOffset = number | function</code>.
    -  If `lightOffset` is a _number_, the `light` value will be `Parent.light` + `Child.lightOffset`.
    -  If `lightOffset` is a _function_, the `Parent.light` value will be given as parameter, and the function must return the wanted `light` value.
+   -  If `null` or `undefined`, assignment will be ignored.
    </dd></dl></dd>
    </dl>
    <br>
@@ -576,6 +584,7 @@ This value will be fixed, independent of the reference value.
 -  Setter <code>Color.alphaOffset = number | function</code>.
    -  If `alphaOffset` is a _number_, the `alpha` value will be `Parent.alpha` + `Child.alphaOffset`.
    -  If `alphaOffset` is a _function_, the `Parent.alpha` value will be given as parameter, and the function must return the wanted `alpha` value.
+   -  If `null` or `undefined`, assignment will be ignored.
    </dd></dl></dd>
    </dl>
 

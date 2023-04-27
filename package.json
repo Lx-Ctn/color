@@ -1,10 +1,10 @@
 {
 	"name": "color",
 	"version": "0.1.0",
-	"description": "Color is a api to easily handle color variation to create dynamic color theme.",
+	"description": "Color is a library to easily handle color variations to create dynamic color theme or complexe color animations for the web.",
 	"main": "Color.js",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "jest --watch"
 	},
 	"repository": {
 		"type": "git",
@@ -16,5 +16,10 @@
 		"theme"
 	],
 	"author": "Alexandre Cottin (Lx Ctn)",
-	"license": "MIT"
+	"license": "MIT",
+	"devDependencies": {
+		"@babel/core": "^7.21.4",
+		"@babel/preset-env": "^7.21.4",
+		"jest": "^29.5.0"
+	}
 }
