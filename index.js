@@ -82,21 +82,9 @@ class Color {
 			// If we get a Color object :
 		} else if (color instanceof Color) {
 			this.#colorReference = color;
-			console.log(arguments);
-			switch (arguments.length) {
-				case arguments.length >= 5:
-				case 4:
-					checkArgumentOffsetType("alpha", alpha);
-					this.#offsets.alpha = alpha ?? defaultValues.offsets.alpha;
-				case 3:
-					checkArgumentOffsetType("light", light);
-					this.#offsets.light = light ?? defaultValues.offsets.light;
-				case 2:
-					checkArgumentOffsetType("saturation", saturation);
-					this.#offsets.saturation = saturation ?? defaultValues.offsets.saturation;
-				default:
-					break;
-			}
+			const offsets = arguments[1];
+			checkArgumentOffsetType(offsets) && this.setColorOffsets(offsets);
+
 			// If we get a object with nammed properties :
 			//} else if (color instanceof Object || typeof color === "object") {
 		} else throw new Error(getErrorMessage.argument("0", color));
@@ -407,14 +395,21 @@ const handleCssColorStrings = color => {
 
 // Argument type checking :
 const offsetTypes = ["number", "function"];
+const offsetNames = ["hue", "saturation", "light", "alpha"];
 
-const checkArgumentOffsetType = (property, offset) => {
-	if (!isValue(offset)) return false; // If null || undefined, just ignore the assignment with no error.
-	if (offsetTypes.includes(typeof offset)) {
-		if (Number.isNaN(offset)) throw new Error(getErrorMessage.argumentOffsetIsNaN(property));
-		else return true;
-	}
-	throw new Error(getErrorMessage.argumentOffset(property, offset));
+const checkArgumentOffsetType = offsets => {
+	if (!isValue(offsets)) return false; // If null || undefined, just ignore the assignment with no error.
+	if (offsets instanceof Object || typeof offsets === "object") {
+		for (const property in offsets) {
+			if (!offsetNames.includes(property)) continue; // Ignore extra properties.
+			const offset = offsets[property];
+			if (!isValue(offset)) continue; // If null || undefined, just ignore the assignment with no error.
+			if (offsetTypes.includes(typeof offset)) {
+				if (Number.isNaN(offset)) throw new Error(getErrorMessage.argumentOffsetIsNaN(property));
+				else continue;
+			} else throw new Error(getErrorMessage.argumentOffset(property, offset));
+		}
+	} else throw new Error(getErrorMessage.offsetsObject(offsets));
 };
 
 const checkOthersArguments = args => {
@@ -422,7 +417,7 @@ const checkOthersArguments = args => {
 	for (const index in args) {
 		if (index > 3) continue;
 		const argument = args[index];
-		if (typeof argument !== "number" && argument !== null)
+		if (typeof argument !== "number" && argument !== null && argument !== undefined)
 			throw new Error(getErrorMessage.argument(index, argument));
 		if (Number.isNaN(argument)) throw new Error(getErrorMessage.argumentIsNaN(index));
 	}
@@ -517,6 +512,12 @@ ${checkDocsMessage(docsAnchors.properties)}`,
 
 	argumentOffsetIsNaN:
 		property => `' NaN ' was passed for the ${property} offset argument, but a number is expected, or a function returning a number.
+${checkDocsMessage(docsAnchors.properties)}`,
+
+	offsetsObject: returnValue => `' ${displayWrongValue(
+		returnValue
+	)} ', a ${typeof returnValue}, was passed for the offsets argument, but a object is expected :
+	offsets = { hue, saturation, light, alpha }; 
 ${checkDocsMessage(docsAnchors.properties)}`,
 
 	offset: (property, returnValue) => `The "${property}Offset" property return ' ${displayWrongValue(
