@@ -1,22 +1,33 @@
 {
-	"name": "color",
-	"version": "0.1.0",
+	"name": "@lxweb/color",
+	"version": "0.2.0",
 	"description": "Color is a library to easily handle color variations to create dynamic color theme or complexe color animations for the web.",
-	"main": "Color.js",
+	"author": "Alexandre Cottin (Lx Ctn) <web@lxctn.com>",
+	"license": "MIT",
+	"main": "index.js",
+	"files": [
+		"index.js",
+		"README.md",
+		"assets/",
+		"!assets/Color Wheel.ai"
+	],
+	"exports": {
+		".": {
+			"default": "./index.js"
+		}
+	},
 	"scripts": {
 		"test": "jest --watch"
 	},
 	"repository": {
 		"type": "git",
-		"url": "comming soon"
+		"url": "https://github.com/Lx-Ctn/color/"
 	},
 	"keywords": [
 		"color",
 		"dynamic",
 		"theme"
 	],
-	"author": "Alexandre Cottin (Lx Ctn)",
-	"license": "MIT",
 	"devDependencies": {
 		"@babel/core": "^7.21.4",
 		"@babel/preset-env": "^7.21.4",
