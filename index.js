@@ -23,7 +23,6 @@
 
 /*
 	TODO: 
-	- feat : add direct hueOffset in constructor after the Color ref 
 	- feat : add named value object in constructor for a better DX
 	- feat : accept other CSS color format : rgb and hsl (and % & /1)
 	- feat : creation of "helpers" / ex: helper shadow = sat / 2 && light - 40% && alpha / 2  => shadows + color = shadowColor
@@ -251,9 +250,9 @@ const getFormatedHue = hue => {
 	if (hue <= 0) return hue % 360 === 0 ? 0 : roundAt1Decimal(hue % 360) + 360;
 	return hue;
 };
-const getFormatedValue = value => {
+const getFormatedValue = (value, max = 100) => {
 	value = roundAt1Decimal(value);
-	return value > 100 ? 100 : value <= 0 ? 0 : value;
+	return value > max ? max : value <= 0 ? 0 : value;
 };
 
 /**
@@ -350,12 +349,13 @@ const hslToRgb = (hue, saturation, light) => {
 /***  Handling CSS color strings :  ***/
 /**************************************/
 
-// Cheking for CSS strings format
-const isCssHexString = colorString => colorString.match(/^#(\d|[a-f]){3,}$/i);
-const isCssRgbString = colorString => colorString.match(/ /);
-const isCssHslString = colorString => colorString.match(/ /);
+// Cheking for valid CSS strings format
+const isCssHexString = colorString => /^#(\d|[a-f]){3,}$/i.test(colorString);
+const isCssRgbString = colorString =>
+	/^rgba?\( *((-?\d+(\.\d*)?%?|-?\.\d+%?|none)( *, *| *\/ *| +)?){3,4} *\)$/i.test(colorString);
+const isCssHslString = colorString => colorString.match(/^hsla?(.*)$/i);
 
-// Converts hex string to digital values :
+// Converts CSS hexa string to digital values :
 const hexStringToValue = (stringColor = "") => {
 	const isShort = stringColor.length < 7; // For the short hex syntax like "#f00"
 	if (isShort) stringColor = stringColor.replace(/^#(.)(.)(.)(.?)/i, "#$1$1$2$2$3$3$4$4");
@@ -370,13 +370,37 @@ const hexStringToValue = (stringColor = "") => {
 	return { red, green, blue, alpha };
 };
 
+// Converts CSS rgb string to digital values :
+const rgbStringToValue = (stringColor = "") => {
+	const stringValues = stringColor.match(
+		/^rgba?\( *(?<red>.+?)(?: *, *| *\/ *| +)(?<green>.+?)(?: *, *| *\/ *| +)(?<blue>.+?)((?: *, *| *\/ *| +)(?<alpha>.+?)?)? *\)$/i
+	).groups;
+
+	const red = handleRgbString(stringValues.red, 255);
+	const green = handleRgbString(stringValues.green, 255);
+	const blue = handleRgbString(stringValues.blue, 255);
+	const alpha = handleRgbString(stringValues.alpha ?? "100", 100);
+	return { red, green, blue, alpha };
+};
+
+const handleRgbString = (string, max) => {
+	if (string === "none") string = "0";
+	const rawValue = parseFloat(string);
+	if (Number.isNaN(rawValue)) throw new Error(getErrorMessage.stringArgument(string));
+	const value = string.includes("%") ? (rawValue * max) / 100 : rawValue;
+	return getFormatedValue(value, max);
+};
+
+// Converts CSS hsl string to digital values :
+const hslStringToValue = (stringColor = "") => {};
+
 // Return HSLA values from CSS color string :
 const handleCssColorStrings = color => {
 	let hslValues;
 	if (isCssHexString(color)) {
 		const rgbaValues = hexStringToValue(color);
 		hslValues = rgbToHsl(rgbaValues);
-	} else if (isCssRgbString(color) && false) {
+	} else if (isCssRgbString(color)) {
 		const rgbaValues = rgbStringToValue(color);
 		hslValues = rgbToHsl(rgbaValues);
 	} else if (isCssHslString(color) && false) {
