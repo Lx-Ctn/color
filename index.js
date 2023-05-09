@@ -24,6 +24,7 @@
 /*
 	TODO: 
 	- feat : add named value object in constructor for a better DX
+	- feat : accept "deg" and "turn" as hue value.
 	- feat : accept other CSS color format : rgb and hsl (and % & /1)
 	- feat : creation of "helpers" / ex: helper shadow = sat / 2 && light - 40% && alpha / 2  => shadows + color = shadowColor
 	- feat : method that export the status of the color (values, offset, hasReference) for debbug reason
@@ -70,13 +71,18 @@ class Color {
 	) {
 		// If we get direct number value :
 		if (color instanceof Number || typeof color === "number" || color === null) {
-			checkOthersArguments(arguments);
+			checkArgumentsType(arguments);
 			this.setColorProperties({ hue: color, saturation, light, alpha });
 
-			// If we get a CSS color string :
+			// If we get a CSS color string or a string hue value ("180deg", "0.5turn"):
 		} else if (color instanceof String || typeof color === "string") {
-			const hslValues = handleCssColorStrings(color);
-			this.setColorProperties(hslValues);
+			if (isValidHueString(color)) {
+				checkArgumentsType(arguments);
+				this.setColorProperties({ hue: getValueFromHueString(color), saturation, light, alpha });
+			} else {
+				const hslValues = handleCssColorStrings(color);
+				this.setColorProperties(hslValues);
+			}
 
 			// If we get a Color object :
 		} else if (color instanceof Color) {
@@ -85,7 +91,8 @@ class Color {
 			checkArgumentOffsetType(offsets) && this.setColorOffsets(offsets);
 
 			// If we get a object with nammed properties :
-			//} else if (color instanceof Object || typeof color === "object") {
+		} else if (color instanceof Object || typeof color === "object") {
+			throw new Error(getErrorMessage.argument("0", color));
 		} else throw new Error(getErrorMessage.argument("0", color));
 	}
 
@@ -353,14 +360,16 @@ const hslToRgb = (hue, saturation, light) => {
 const isCssHexString = colorString => /^#(\d|[a-f]){3,}$/i.test(colorString);
 const isCssRgbString = colorString =>
 	/^rgba?\( *((-?\d+(\.\d*)?%?|-?\.\d+%?|none)( *, *| *\/ *| +)?){3,4} *\)$/i.test(colorString);
-const isCssHslString = colorString => colorString.match(/^hsla?(.*)$/i);
+const isCssHslString = colorString =>
+	/^hsla?\( *((-?\d+(\.\d*)?%?|-?\.\d+%?|none)( *, *| *\/ *| +)?){3,4} *\)$/i.test(colorString);
+const isValidHueString = colorString => /^ *(-?\d+(\.\d*)?|-?\.\d+)(deg|turn)? *$/i.test(colorString);
 
 // Converts CSS hexa string to digital values :
-const hexStringToValue = (stringColor = "") => {
-	const isShort = stringColor.length < 7; // For the short hex syntax like "#f00"
-	if (isShort) stringColor = stringColor.replace(/^#(.)(.)(.)(.?)/i, "#$1$1$2$2$3$3$4$4");
+const hexStringToValue = (colorString = "") => {
+	const isShort = colorString.length < 7; // For the short hex syntax like "#f00"
+	if (isShort) colorString = colorString.replace(/^#(.)(.)(.)(.?)/i, "#$1$1$2$2$3$3$4$4");
 
-	const hex = stringColor.match(/^#(?<red>.{2})(?<green>.{2})(?<blue>.{2})(?<alpha>.{0,2})/).groups;
+	const hex = colorString.match(/^#(?<red>.{2})(?<green>.{2})(?<blue>.{2})(?<alpha>.{0,2})/).groups;
 
 	const red = parseInt(hex.red, 16);
 	const green = parseInt(hex.green, 16);
@@ -371,8 +380,8 @@ const hexStringToValue = (stringColor = "") => {
 };
 
 // Converts CSS rgb string to digital values :
-const rgbStringToValue = (stringColor = "") => {
-	const stringValues = stringColor.match(
+const rgbStringToValue = (colorString = "") => {
+	const stringValues = colorString.match(
 		/^rgba?\( *(?<red>.+?)(?: *, *| *\/ *| +)(?<green>.+?)(?: *, *| *\/ *| +)(?<blue>.+?)((?: *, *| *\/ *| +)(?<alpha>.+?)?)? *\)$/i
 	).groups;
 
@@ -392,7 +401,14 @@ const handleRgbString = (string, max) => {
 };
 
 // Converts CSS hsl string to digital values :
-const hslStringToValue = (stringColor = "") => {};
+const hslStringToValue = (colorString = "") => {};
+
+// Converts hue string to hue value :
+const getValueFromHueString = (colorString = "") => {
+	const stringValue = colorString.match(/^ *(.+)(deg|turn)? *$/i)[1];
+	const value = parseFloat(stringValue);
+	return colorString.includes("turn") ? value * 360 : value;
+};
 
 // Return HSLA values from CSS color string :
 const handleCssColorStrings = color => {
@@ -436,12 +452,13 @@ const checkArgumentOffsetType = offsets => {
 	} else throw new Error(getErrorMessage.offsetsObject(offsets));
 };
 
-const checkOthersArguments = args => {
-	// If the 1st argument is a direct number value
+const checkArgumentsType = args => {
+	// If the 1st argument is a direct number value or a hue <angle> string :
 	for (const index in args) {
 		if (index > 3) continue;
 		const argument = args[index];
-		if (typeof argument !== "number" && argument !== null && argument !== undefined)
+		if (index === "0" && (argument instanceof String || typeof argument === "string")) continue;
+		if (isValue(argument) && !(argument instanceof Number) && typeof argument !== "number")
 			throw new Error(getErrorMessage.argument(index, argument));
 		if (Number.isNaN(argument)) throw new Error(getErrorMessage.argumentIsNaN(index));
 	}
@@ -491,7 +508,7 @@ const checkDocsMessage = (where = docsAnchors.presentation) =>
 
 const colorErrorMessage = parameter => `' ${displayWrongValue(
 	parameter
-)} ', a ${typeof parameter}, was passed for the hue argument, but a number, a CSS string or a Color object is expected.
+)} ', a ${typeof parameter}, was passed for the hue argument, but a number, a CSS color string, a <angle> string or a Color object is expected.
 ${checkDocsMessage(docsAnchors.arguments)}`;
 
 const argumentErrorMessage = (property, parameter) => `' ${displayWrongValue(
