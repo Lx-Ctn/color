@@ -17,7 +17,7 @@ function allDefaultParamTest(color) {
 // null || undefined :
 
 describe("undefined parameters", () => {
-	test("Should have all default value with undefined constructor parameters", () => {
+	test("Should have all default value with empty constructor parameters", () => {
 		const color = new Color();
 		allDefaultParamTest(color);
 	});
@@ -29,6 +29,12 @@ describe("undefined parameters", () => {
 		expect(red.toHsl()).toBe("hsl(0, 100%, 50%)");
 		expect(red.toRgb()).toBe("rgb(255, 0, 0)");
 		expect(red.toHex()).toBe("#ff0000");
+
+		const red2 = new Color(undefined);
+		expect(red2.hue).toBe(0);
+		expect(red2.toHsl()).toBe("hsl(0, 100%, 50%)");
+		expect(red2.toRgb()).toBe("rgb(255, 0, 0)");
+		expect(red2.toHex()).toBe("#ff0000");
 
 		const blue = new Color(240);
 		blue.hue = undefined;
@@ -46,6 +52,12 @@ describe("undefined parameters", () => {
 		expect(red.toRgb()).toBe("rgb(255, 0, 0)");
 		expect(red.toHex()).toBe("#ff0000");
 
+		const red2 = new Color(null, undefined);
+		expect(red2.saturation).toBe(100);
+		expect(red2.toHsl()).toBe("hsl(0, 100%, 50%)");
+		expect(red2.toRgb()).toBe("rgb(255, 0, 0)");
+		expect(red2.toHex()).toBe("#ff0000");
+
 		const blue = new Color(240, 57);
 		blue.saturation = undefined;
 		expect(blue.saturation).toBe(57);
@@ -53,8 +65,14 @@ describe("undefined parameters", () => {
 	});
 
 	test("undefined light assignment should be ignored", () => {
-		const red = new Color();
+		let red = new Color();
 		red.light = undefined;
+		expect(red.light).toBe(50);
+		expect(red.toHsl()).toBe("hsl(0, 100%, 50%)");
+		expect(red.toRgb()).toBe("rgb(255, 0, 0)");
+		expect(red.toHex()).toBe("#ff0000");
+
+		red = new Color(null, null, undefined);
 		expect(red.light).toBe(50);
 		expect(red.toHsl()).toBe("hsl(0, 100%, 50%)");
 		expect(red.toRgb()).toBe("rgb(255, 0, 0)");
@@ -67,8 +85,14 @@ describe("undefined parameters", () => {
 	});
 
 	test("undefined alpha assignment should be ignored", () => {
-		const red = new Color();
+		let red = new Color();
 		red.alpha = undefined;
+		expect(red.alpha).toBe(100);
+		expect(red.toHsl()).toBe("hsl(0, 100%, 50%)");
+		expect(red.toRgb()).toBe("rgb(255, 0, 0)");
+		expect(red.toHex()).toBe("#ff0000");
+
+		red = new Color(null, null, null, undefined);
 		expect(red.alpha).toBe(100);
 		expect(red.toHsl()).toBe("hsl(0, 100%, 50%)");
 		expect(red.toRgb()).toBe("rgb(255, 0, 0)");
@@ -347,7 +371,6 @@ describe("null parameters", () => {
 		expect(blue.toHsl()).toBe("hsla(0, 100%, 50%, 70%)");
 	});
 });
-
 // Number values :
 
 describe("hue number value", () => {

@@ -23,7 +23,7 @@
 
 /*
 	TODO: 
-	- feat : accept other CSS color format : rgb and hsl (and % & /1)
+	- feat : add named value object in constructor for a better DX
 	- feat : creation of "helpers" / ex: helper shadow = sat / 2 && light - 40% && alpha / 2  => shadows + color = shadowColor
 	- feat : method that export the status of the color (values, offset, hasReference) for debbug reason
 	- feat : easy dark/light theme integration ?
@@ -36,11 +36,18 @@
 	*/
 
 const defaultValues = {
-	hue: 0,
-	saturation: 100,
-	light: 50,
-	alpha: 100,
-	offset: 0,
+	properties: {
+		hue: 0,
+		saturation: 100,
+		light: 50,
+		alpha: 100,
+	},
+	offsets: {
+		hue: 0,
+		saturation: 0,
+		light: 0,
+		alpha: 0,
+	},
 };
 
 class Color {
@@ -52,73 +59,50 @@ class Color {
 	#saturation;
 	#light;
 	#alpha;
-	#offset = {
-		hue: defaultValues.offset,
-		saturation: defaultValues.offset,
-		light: defaultValues.offset,
-		alpha: defaultValues.offset,
-	};
+	#offsets = { ...defaultValues.offsets };
 
 	constructor(
-		color = defaultValues.hue,
-		saturation = defaultValues.saturation,
-		light = defaultValues.light,
-		alpha = defaultValues.alpha
+		color = defaultValues.properties.hue,
+		saturation = defaultValues.properties.saturation,
+		light = defaultValues.properties.light,
+		alpha = defaultValues.properties.alpha
 	) {
-		// If we get a Color object :
-		if (color instanceof Color) {
-			this.#colorReference = color;
-			switch (arguments.length) {
-				case arguments.length >= 5:
-				case 4:
-					checkArgumentOffsetType("alpha", alpha);
-					this.#offset.alpha = alpha ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
-				case 3:
-					checkArgumentOffsetType("light", light);
-					this.#offset.light = light ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
-				case 2:
-					checkArgumentOffsetType("saturation", saturation);
-					this.#offset.saturation = saturation ?? defaultValues.offset; // eslint-disable-next-line no-fallthrough
-				default:
-					break;
-			}
-		} else {
-			// If we get a CSS color string :
-			if (color instanceof String || typeof color === "string") {
-				let rgbaColors;
-				if (isCssHexString(color)) {
-					rgbaColors = hexToValue(color);
-				} else throw new Error(getErrorMessage.stringArgument(color));
-				({ hue: color, saturation, light, alpha } = rgbToHsl(rgbaColors));
+		// If we get direct number value :
+		if (color instanceof Number || typeof color === "number" || color === null) {
+			checkArgumentsType(arguments);
+			this.setColorProperties({ hue: color, saturation, light, alpha });
 
-				// If we get a hue number value :
-			} else {
-				for (const index in arguments) {
-					if (index > 3) continue;
-					const argument = arguments[index];
-					if (typeof argument !== "number" && argument !== null)
-						throw new Error(getErrorMessage.argument(index, argument));
-					if (Number.isNaN(argument)) throw new Error(getErrorMessage.argumentIsNaN(index));
-				}
-			}
-			this.#hue = getFormatedHue(color ?? defaultValues.hue);
-			this.#saturation = getFormatedValue(saturation ?? defaultValues.saturation);
-			this.#light = getFormatedValue(light ?? defaultValues.light);
-			this.#alpha = getFormatedValue(alpha ?? defaultValues.alpha);
-		}
+			// If we get a <angle> string for hue value ("180deg", "0.5turn"):
+		} else if ((color instanceof String || typeof color === "string") && isValidHueString(color)) {
+			checkArgumentsType(arguments);
+			this.setColorProperties({ hue: getValueFromHueString(color), saturation, light, alpha });
+
+			// If we get a CSS color string :
+		} else if (color instanceof String || typeof color === "string") {
+			const hslValues = handleCssColorStrings(color);
+			this.setColorProperties(hslValues);
+
+			// If we get a Color object :
+		} else if (color instanceof Color) {
+			this.#colorReference = color;
+			const offsets = arguments[1];
+			checkArgumentOffsetType(offsets) && this.setColorOffsets(offsets);
+
+			// If we get a object with nammed properties :
+		} else if (color instanceof Object || typeof color === "object") {
+			throw new Error(getErrorMessage.argument("0", color));
+		} else throw new Error(getErrorMessage.argument("0", color));
 	}
 
 	#getValueFromOffset(value) {
 		const refValue = this.#colorReference?.[value];
-		const valueOffset = this.#offset[value];
+		const valueOffset = this.#offsets[value];
+
 		if (typeof valueOffset === "function") {
 			const valueFromCallback = valueOffset(refValue);
-			if (typeof valueFromCallback !== "number")
-				throw new Error(getErrorMessage.callback(value, valueFromCallback));
-			if (Number.isNaN(valueFromCallback)) throw new Error(getErrorMessage.callbackIsNaN(value));
+			checkCallbackReturnValue(value, valueFromCallback);
 			return valueFromCallback;
-		} else if (typeof valueOffset !== "number") throw new Error(getErrorMessage.offset(value, valueOffset));
-		return refValue + valueOffset;
+		} else return refValue + valueOffset;
 	}
 
 	/*
@@ -175,34 +159,34 @@ class Color {
 
 	// Hue offset :
 	get hueOffset() {
-		return this.#offset.hue;
+		return this.#offsets.hue;
 	}
 	set hueOffset(hueOffset) {
-		if (checkOffsetType("hue", hueOffset)) this.#offset.hue = hueOffset;
+		if (checkOffsetType("hue", hueOffset)) this.#offsets.hue = hueOffset;
 	}
 
 	// Saturation offset :
 	get saturationOffset() {
-		return this.#offset.saturation;
+		return this.#offsets.saturation;
 	}
 	set saturationOffset(saturationOffset) {
-		if (checkOffsetType("saturation", saturationOffset)) this.#offset.saturation = saturationOffset;
+		if (checkOffsetType("saturation", saturationOffset)) this.#offsets.saturation = saturationOffset;
 	}
 
 	// Light offset :
 	get lightOffset() {
-		return this.#offset.light;
+		return this.#offsets.light;
 	}
 	set lightOffset(lightOffset) {
-		if (checkOffsetType("light", lightOffset)) this.#offset.light = lightOffset;
+		if (checkOffsetType("light", lightOffset)) this.#offsets.light = lightOffset;
 	}
 
 	// Alpha offset :
 	get alphaOffset() {
-		return this.#offset.alpha;
+		return this.#offsets.alpha;
 	}
 	set alphaOffset(alphaOffset) {
-		if (checkOffsetType("alpha", alphaOffset)) this.#offset.alpha = alphaOffset;
+		if (checkOffsetType("alpha", alphaOffset)) this.#offsets.alpha = alphaOffset;
 	}
 
 	/*
@@ -233,10 +217,26 @@ class Color {
 		const alpha = getHex(Math.round((this.alpha * 255) / 100));
 		return this.alpha === 100 ? `#${red}${green}${blue}` : `#${red}${green}${blue}${alpha}`;
 	}
+
+	// Set all properties at once :
+	setColorProperties(ColorProps = defaultValues.properties) {
+		this.#hue = getFormatedHue(ColorProps.hue ?? defaultValues.properties.hue);
+		this.#saturation = getFormatedValue(ColorProps.saturation ?? defaultValues.properties.saturation);
+		this.#light = getFormatedValue(ColorProps.light ?? defaultValues.properties.light);
+		this.#alpha = getFormatedValue(ColorProps.alpha ?? defaultValues.properties.alpha);
+	}
+
+	setColorOffsets(ColorOffsets = defaultValues.offsets) {
+		this.#offsets.hue = ColorOffsets.hue ?? defaultValues.offsets.hue;
+		this.#offsets.saturation = ColorOffsets.saturation ?? defaultValues.offsets.saturation;
+		this.#offsets.light = ColorOffsets.light ?? defaultValues.offsets.light;
+		this.#offsets.alpha = ColorOffsets.alpha ?? defaultValues.offsets.alpha;
+	}
 }
 
 export default Color;
 /*
+
 
 
 
@@ -248,36 +248,6 @@ export default Color;
 const roundAt1Decimal = number => Math.round(number * 10) / 10;
 const isValue = value => value !== null && value !== undefined;
 
-// Argument type cheking :
-const offsetTypes = ["number", "function"];
-
-const checkArgumentOffsetType = (property, offset) => {
-	if (!isValue(offset)) return false; // If null || undefined, just ignore the assignment with no error.
-	if (offsetTypes.includes(typeof offset)) {
-		if (Number.isNaN(offset)) throw new Error(getErrorMessage.argumentOffsetIsNaN(property));
-		else return true;
-	}
-	throw new Error(getErrorMessage.argumentOffset(property, offset));
-};
-
-// assignment type cheking :
-const checkOffsetType = (property, offset) => {
-	if (!isValue(offset)) return false; // If null || undefined, just ignore the assignment with no error.
-	if (offsetTypes.includes(typeof offset)) {
-		if (Number.isNaN(offset)) throw new Error(getErrorMessage.offsetIsNaN(property));
-		else return true;
-	}
-	throw new Error(getErrorMessage.offset(property, offset));
-};
-const checkPropertyType = (property, value) => {
-	if (!isValue(value)) return false; // If null || undefined, just ignore the assignment with no error.
-	if (typeof value === "number") {
-		if (Number.isNaN(value)) throw new Error(getErrorMessage.propertyIsNaN(property));
-		else return true;
-	}
-	throw new Error(getErrorMessage.property(property, value));
-};
-
 // Allow every argument but export the right HSL value :
 const getFormatedHue = hue => {
 	hue = roundAt1Decimal(hue);
@@ -285,29 +255,9 @@ const getFormatedHue = hue => {
 	if (hue <= 0) return hue % 360 === 0 ? 0 : roundAt1Decimal(hue % 360) + 360;
 	return hue;
 };
-const getFormatedValue = value => {
+const getFormatedValue = (value, max = 100) => {
 	value = roundAt1Decimal(value);
-	return value > 100 ? 100 : value <= 0 ? 0 : value;
-};
-
-// Cheking for CSS strings format
-const isCssHexString = colorString => {
-	return colorString.match(/^#(\d|[a-f]){3,}$/i);
-};
-
-// Converts hex string to digital values :
-const hexToValue = (stringColor = "") => {
-	const isShort = stringColor.length < 7; // For the short hex syntax like "#f00"
-	if (isShort) stringColor = stringColor.replace(/^#(.)(.)(.)(.?)/i, "#$1$1$2$2$3$3$4$4");
-
-	const hex = stringColor.match(/^#(?<red>.{2})(?<green>.{2})(?<blue>.{2})(?<alpha>.{0,2})/).groups;
-
-	const red = parseInt(hex.red, 16);
-	const green = parseInt(hex.green, 16);
-	const blue = parseInt(hex.blue, 16);
-	const alpha = parseInt(hex.alpha || "ff", 16);
-
-	return { red, green, blue, alpha };
+	return value > max ? max : value <= 0 ? 0 : value;
 };
 
 /**
@@ -398,34 +348,195 @@ const hslToRgb = (hue, saturation, light) => {
 
 
 
+
+
+/**************************************/
+/***  Handling CSS color strings :  ***/
+/**************************************/
+
+// Cheking for valid CSS strings format
+const isCssHexString = colorString => /^#(\d|[a-f]){3,}$/i.test(colorString);
+const isCssRgbString = colorString =>
+	/^rgba?\( *((-?\d+(\.\d*)?%?|-?\.\d+%?|none)( *, *| *\/ *| +)?){3,4} *\)$/i.test(colorString);
+const isCssHslString = colorString =>
+	/^hsla?\( *(-?\d+(\.\d*)?|-?\.\d+)(deg|turn)?( *, *| *\/ *| +)((-?\d+(\.\d*)?%?|-?\.\d+%?)( *, *| *\/ *| +)?){2,3} *\)$/i.test(
+		colorString
+	);
+const isValidHueString = colorString => /^ *(-?\d+(\.\d*)?|-?\.\d+)(deg|turn)? *$/i.test(colorString);
+
+// Converts CSS hexa string to digital values :
+const hexStringToValue = (colorString = "") => {
+	const isShort = colorString.length < 7; // For the short hex syntax like "#f00"
+	if (isShort) colorString = colorString.replace(/^#(.)(.)(.)(.?)/i, "#$1$1$2$2$3$3$4$4");
+
+	const hex = colorString.match(/^#(?<red>.{2})(?<green>.{2})(?<blue>.{2})(?<alpha>.{0,2})/).groups;
+
+	const red = parseInt(hex.red, 16);
+	const green = parseInt(hex.green, 16);
+	const blue = parseInt(hex.blue, 16);
+	const alpha = parseInt(hex.alpha || "ff", 16);
+
+	return { red, green, blue, alpha };
+};
+
+// Converts CSS rgb string to digital values :
+const rgbStringToValue = (colorString = "") => {
+	const stringValues = colorString.match(
+		/^rgba?\( *(?<red>.+?)(?: *, *| *\/ *| +)(?<green>.+?)(?: *, *| *\/ *| +)(?<blue>.+?)((?: *, *| *\/ *| +)(?<alpha>.+?)?)? *\)$/i
+	).groups;
+
+	const red = handleStringtoValue(stringValues.red, 255);
+	const green = handleStringtoValue(stringValues.green, 255);
+	const blue = handleStringtoValue(stringValues.blue, 255);
+	const alpha = handleStringtoValue(stringValues.alpha ?? "100", 100);
+	return { red, green, blue, alpha };
+};
+
+// Converts CSS hsl string to digital values :
+const hslStringToValue = (colorString = "") => {
+	const stringValues = colorString.match(
+		/^hsla?\( *(?<hue>.+?)(?: *, *| *\/ *| +)(?<saturation>.+?)(?: *, *| *\/ *| +)(?<light>.+?)((?: *, *| *\/ *| +)(?<alpha>.+?)?)? *\)$/i
+	).groups;
+
+	const hue = getValueFromHueString(stringValues.hue);
+	const saturation = handleStringtoValue(stringValues.saturation, 100);
+	const light = handleStringtoValue(stringValues.light, 100);
+	const alpha = handleStringtoValue(stringValues.alpha ?? "100", 100);
+	return { hue, saturation, light, alpha };
+};
+
+// Converts hue string to hue value :
+const getValueFromHueString = (colorString = "") => {
+	const stringValue = colorString.match(/^ *(.+)(deg|turn)? *$/i)[1];
+	const value = parseFloat(stringValue);
+	return colorString.includes("turn") ? value * 360 : value;
+};
+
+const handleStringtoValue = (string, max) => {
+	if (string === "none") string = "0";
+	const rawValue = parseFloat(string);
+	if (Number.isNaN(rawValue)) throw new Error(getErrorMessage.stringArgument(string));
+	const value = string.includes("%") ? rawValue : rawValue * max;
+	return getFormatedValue(value, max);
+};
+
+// Return HSLA values from CSS color string :
+const handleCssColorStrings = color => {
+	let hslValues;
+	if (isCssHexString(color)) {
+		const rgbaValues = hexStringToValue(color);
+		hslValues = rgbToHsl(rgbaValues);
+	} else if (isCssRgbString(color)) {
+		const rgbaValues = rgbStringToValue(color);
+		hslValues = rgbToHsl(rgbaValues);
+	} else if (isCssHslString(color)) {
+		hslValues = hslStringToValue(color);
+	} else throw new Error(getErrorMessage.stringArgument(color));
+	return hslValues;
+};
+/*
+
+
+
+
+/************************/
+/***  Type checking :  ***/
+/************************/
+
+// Argument type checking :
+const offsetTypes = ["number", "function"];
+const offsetNames = ["hue", "saturation", "light", "alpha"];
+
+const checkArgumentOffsetType = offsets => {
+	if (!isValue(offsets)) return false; // If null || undefined, just ignore the assignment with no error.
+	if (offsets instanceof Object || typeof offsets === "object") {
+		for (const property in offsets) {
+			if (!offsetNames.includes(property)) continue; // Ignore extra properties.
+			const offset = offsets[property];
+			if (!isValue(offset)) continue; // If null || undefined, just ignore the assignment with no error.
+			if (offsetTypes.includes(typeof offset)) {
+				if (Number.isNaN(offset)) throw new Error(getErrorMessage.argumentOffsetIsNaN(property));
+				else continue;
+			} else throw new Error(getErrorMessage.argumentOffset(property, offset));
+		}
+	} else throw new Error(getErrorMessage.offsetsObject(offsets));
+};
+
+const checkArgumentsType = args => {
+	// If the 1st argument is a direct number value or a hue <angle> string :
+	for (const index in args) {
+		if (index > 3) continue;
+		const argument = args[index];
+		if (index === "0" && (argument instanceof String || typeof argument === "string")) continue;
+		if (isValue(argument) && !(argument instanceof Number) && typeof argument !== "number")
+			throw new Error(getErrorMessage.argument(index, argument));
+		if (Number.isNaN(argument)) throw new Error(getErrorMessage.argumentIsNaN(index));
+	}
+};
+
+// Properties type checking :
+const checkOffsetType = (property, offset) => {
+	if (!isValue(offset)) return false; // If null || undefined, just ignore the assignment with no error.
+	if (offsetTypes.includes(typeof offset)) {
+		if (Number.isNaN(offset)) throw new Error(getErrorMessage.offsetIsNaN(property));
+		else return true;
+	}
+	throw new Error(getErrorMessage.offset(property, offset));
+};
+const checkPropertyType = (property, value) => {
+	if (!isValue(value)) return false; // If null || undefined, just ignore the assignment with no error.
+	if (typeof value === "number") {
+		if (Number.isNaN(value)) throw new Error(getErrorMessage.propertyIsNaN(property));
+		else return true;
+	}
+	throw new Error(getErrorMessage.property(property, value));
+};
+
+// Callback return type checking :
+const checkCallbackReturnValue = (property, value) => {
+	if (typeof value !== "number") throw new Error(getErrorMessage.callback(property, value));
+	if (Number.isNaN(value)) throw new Error(getErrorMessage.callbackIsNaN(property));
+};
+/*
+
+
+
+
+
 /***************************/
 /***  Handling errors :  ***/
 /***************************/
 
 const displayWrongValue = value => (typeof value !== "function" ? JSON.stringify(value) : value);
-const checkDocsMessage = (where = "the-color-object") =>
+const docsAnchors = {
+	presentation: "the-color-object",
+	arguments: "constructor-parameters",
+	properties: "properties",
+};
+const checkDocsMessage = (where = docsAnchors.presentation) =>
 	`Check docs at https://github.com/Lx-Ctn/color/#${where}- to know more.`;
 
 const colorErrorMessage = parameter => `' ${displayWrongValue(
 	parameter
-)} ', a ${typeof parameter}, was passed for the hue argument, but a number, a CSS string or a Color object is expected.
-${checkDocsMessage("constructor-parameters")}`;
+)} ', a ${typeof parameter}, was passed for the hue argument, but a number, a CSS color string, a <angle> string or a Color object is expected.
+${checkDocsMessage(docsAnchors.arguments)}`;
 
 const argumentErrorMessage = (property, parameter) => `' ${displayWrongValue(
 	parameter
 )} ', a ${typeof parameter}, was passed for the ${property} argument, but a number is expected.
-${checkDocsMessage("constructor-parameters")}`;
+${checkDocsMessage(docsAnchors.arguments)}`;
 
 const colorIsNaNMessage = `' NaN ' was passed for the hue argument, but a number, a CSS string or a Color object is expected.
-${checkDocsMessage("constructor-parameters")}`;
+${checkDocsMessage(docsAnchors.arguments)}`;
 
 const argumentIsNaNMessage =
 	property => `' NaN ' was passed for the ${property} argument, but a number is expected.
-${checkDocsMessage("constructor-parameters")}`;
+${checkDocsMessage(docsAnchors.arguments)}`;
 
+//
 export const getErrorMessage = {
 	stringArgument: argument => `Argument must be a valid CSS color string, but "${argument}" was passed.
-${checkDocsMessage("constructor-parameters")}`,
+${checkDocsMessage(docsAnchors.arguments)}`,
 
 	argument: (index, parameter) => {
 		if (index === "0") return colorErrorMessage(parameter);
@@ -440,28 +551,34 @@ ${checkDocsMessage("constructor-parameters")}`,
 	property: (property, returnValue) => `The "${property}" property return ' ${displayWrongValue(
 		returnValue
 	)} ', a ${typeof returnValue}, but must return a number.
-${checkDocsMessage("properties")}`,
+${checkDocsMessage(docsAnchors.properties)}`,
 
 	propertyIsNaN: property => `The "${property}" property return ' NaN ', but must return a number.
-${checkDocsMessage("properties")}`,
+${checkDocsMessage(docsAnchors.properties)}`,
 
 	argumentOffset: (property, returnValue) => `' ${displayWrongValue(
 		returnValue
 	)} ', a ${typeof returnValue}, was passed for the ${property} offset argument, but a number is expected, or a function returning a number.
-${checkDocsMessage("properties")}`,
+${checkDocsMessage(docsAnchors.properties)}`,
 
 	argumentOffsetIsNaN:
 		property => `' NaN ' was passed for the ${property} offset argument, but a number is expected, or a function returning a number.
-${checkDocsMessage("properties")}`,
+${checkDocsMessage(docsAnchors.properties)}`,
+
+	offsetsObject: returnValue => `' ${displayWrongValue(
+		returnValue
+	)} ', a ${typeof returnValue}, was passed for the offsets argument, but a object is expected :
+	offsets = { hue, saturation, light, alpha }; 
+${checkDocsMessage(docsAnchors.properties)}`,
 
 	offset: (property, returnValue) => `The "${property}Offset" property return ' ${displayWrongValue(
 		returnValue
 	)} ', a ${typeof returnValue}, but must return a number, or a function returning a number.
-${checkDocsMessage("properties")}`,
+${checkDocsMessage(docsAnchors.properties)}`,
 
 	offsetIsNaN:
 		property => `The "${property}Offset" property return ' NaN ', but must return a number, or a function returning a number.
-${checkDocsMessage("properties")}`,
+${checkDocsMessage(docsAnchors.properties)}`,
 
 	callback: (
 		property,
@@ -469,9 +586,9 @@ ${checkDocsMessage("properties")}`,
 	) => `Callback in your "${property}Offset" property return ' ${displayWrongValue(returnValue)} '${
 		typeof returnValue === "undefined" ? "" : ", a " + typeof returnValue
 	}, but must return a number.
-${checkDocsMessage("properties")}`,
+${checkDocsMessage(docsAnchors.properties)}`,
 
 	callbackIsNaN:
 		property => `Callback in your "${property}Offset" property return ' NaN ' but must return a valid number.
-${checkDocsMessage("properties")}`,
+${checkDocsMessage(docsAnchors.properties)}`,
 };
