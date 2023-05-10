@@ -24,8 +24,6 @@
 /*
 	TODO: 
 	- feat : add named value object in constructor for a better DX
-	- feat : accept "deg" and "turn" as hue value.
-	- feat : accept other CSS color format : rgb and hsl (and % & /1)
 	- feat : creation of "helpers" / ex: helper shadow = sat / 2 && light - 40% && alpha / 2  => shadows + color = shadowColor
 	- feat : method that export the status of the color (values, offset, hasReference) for debbug reason
 	- feat : easy dark/light theme integration ?
@@ -74,15 +72,15 @@ class Color {
 			checkArgumentsType(arguments);
 			this.setColorProperties({ hue: color, saturation, light, alpha });
 
-			// If we get a CSS color string or a string hue value ("180deg", "0.5turn"):
+			// If we get a <angle> string for hue value ("180deg", "0.5turn"):
+		} else if ((color instanceof String || typeof color === "string") && isValidHueString(color)) {
+			checkArgumentsType(arguments);
+			this.setColorProperties({ hue: getValueFromHueString(color), saturation, light, alpha });
+
+			// If we get a CSS color string :
 		} else if (color instanceof String || typeof color === "string") {
-			if (isValidHueString(color)) {
-				checkArgumentsType(arguments);
-				this.setColorProperties({ hue: getValueFromHueString(color), saturation, light, alpha });
-			} else {
-				const hslValues = handleCssColorStrings(color);
-				this.setColorProperties(hslValues);
-			}
+			const hslValues = handleCssColorStrings(color);
+			this.setColorProperties(hslValues);
 
 			// If we get a Color object :
 		} else if (color instanceof Color) {
@@ -361,7 +359,9 @@ const isCssHexString = colorString => /^#(\d|[a-f]){3,}$/i.test(colorString);
 const isCssRgbString = colorString =>
 	/^rgba?\( *((-?\d+(\.\d*)?%?|-?\.\d+%?|none)( *, *| *\/ *| +)?){3,4} *\)$/i.test(colorString);
 const isCssHslString = colorString =>
-	/^hsla?\( *((-?\d+(\.\d*)?%?|-?\.\d+%?|none)( *, *| *\/ *| +)?){3,4} *\)$/i.test(colorString);
+	/^hsla?\( *(-?\d+(\.\d*)?|-?\.\d+)(deg|turn)?( *, *| *\/ *| +)((-?\d+(\.\d*)?%?|-?\.\d+%?)( *, *| *\/ *| +)?){2,3} *\)$/i.test(
+		colorString
+	);
 const isValidHueString = colorString => /^ *(-?\d+(\.\d*)?|-?\.\d+)(deg|turn)? *$/i.test(colorString);
 
 // Converts CSS hexa string to digital values :
@@ -385,29 +385,39 @@ const rgbStringToValue = (colorString = "") => {
 		/^rgba?\( *(?<red>.+?)(?: *, *| *\/ *| +)(?<green>.+?)(?: *, *| *\/ *| +)(?<blue>.+?)((?: *, *| *\/ *| +)(?<alpha>.+?)?)? *\)$/i
 	).groups;
 
-	const red = handleRgbString(stringValues.red, 255);
-	const green = handleRgbString(stringValues.green, 255);
-	const blue = handleRgbString(stringValues.blue, 255);
-	const alpha = handleRgbString(stringValues.alpha ?? "100", 100);
+	const red = handleStringtoValue(stringValues.red, 255);
+	const green = handleStringtoValue(stringValues.green, 255);
+	const blue = handleStringtoValue(stringValues.blue, 255);
+	const alpha = handleStringtoValue(stringValues.alpha ?? "100", 100);
 	return { red, green, blue, alpha };
 };
 
-const handleRgbString = (string, max) => {
-	if (string === "none") string = "0";
-	const rawValue = parseFloat(string);
-	if (Number.isNaN(rawValue)) throw new Error(getErrorMessage.stringArgument(string));
-	const value = string.includes("%") ? (rawValue * max) / 100 : rawValue;
-	return getFormatedValue(value, max);
-};
-
 // Converts CSS hsl string to digital values :
-const hslStringToValue = (colorString = "") => {};
+const hslStringToValue = (colorString = "") => {
+	const stringValues = colorString.match(
+		/^hsla?\( *(?<hue>.+?)(?: *, *| *\/ *| +)(?<saturation>.+?)(?: *, *| *\/ *| +)(?<light>.+?)((?: *, *| *\/ *| +)(?<alpha>.+?)?)? *\)$/i
+	).groups;
+
+	const hue = getValueFromHueString(stringValues.hue);
+	const saturation = handleStringtoValue(stringValues.saturation, 100);
+	const light = handleStringtoValue(stringValues.light, 100);
+	const alpha = handleStringtoValue(stringValues.alpha ?? "100", 100);
+	return { hue, saturation, light, alpha };
+};
 
 // Converts hue string to hue value :
 const getValueFromHueString = (colorString = "") => {
 	const stringValue = colorString.match(/^ *(.+)(deg|turn)? *$/i)[1];
 	const value = parseFloat(stringValue);
 	return colorString.includes("turn") ? value * 360 : value;
+};
+
+const handleStringtoValue = (string, max) => {
+	if (string === "none") string = "0";
+	const rawValue = parseFloat(string);
+	if (Number.isNaN(rawValue)) throw new Error(getErrorMessage.stringArgument(string));
+	const value = string.includes("%") ? rawValue : rawValue * max;
+	return getFormatedValue(value, max);
 };
 
 // Return HSLA values from CSS color string :
@@ -419,7 +429,7 @@ const handleCssColorStrings = color => {
 	} else if (isCssRgbString(color)) {
 		const rgbaValues = rgbStringToValue(color);
 		hslValues = rgbToHsl(rgbaValues);
-	} else if (isCssHslString(color) && false) {
+	} else if (isCssHslString(color)) {
 		hslValues = hslStringToValue(color);
 	} else throw new Error(getErrorMessage.stringArgument(color));
 	return hslValues;
