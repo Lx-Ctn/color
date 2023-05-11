@@ -73,7 +73,7 @@ class Color {
 			this.setColorProperties({ hue: color, saturation, light, alpha });
 
 			// If we get a <angle> string for hue value ("180deg", "0.5turn"):
-		} else if ((color instanceof String || typeof color === "string") && isValidHueString(color)) {
+		} else if (isValidHueString(color)) {
 			checkArgumentsType(arguments);
 			this.setColorProperties({ hue: getValueFromHueString(color), saturation, light, alpha });
 
@@ -88,9 +88,14 @@ class Color {
 			const offsets = arguments[1];
 			checkArgumentOffsetType(offsets) && this.setColorOffsets(offsets);
 
-			// If we get a object with nammed properties :
+			// If we get a object with named properties :
 		} else if (color instanceof Object || typeof color === "object") {
-			throw new Error(getErrorMessage.argument("0", color));
+			const constructor = handleNamedProperties(color);
+			this.#colorReference = constructor.ref;
+			constructor.properties && this.setColorProperties(constructor.properties);
+			constructor.offsets && this.setColorOffsets(constructor.offsets);
+
+			//
 		} else throw new Error(getErrorMessage.argument("0", color));
 	}
 
@@ -350,6 +355,56 @@ const hslToRgb = (hue, saturation, light) => {
 
 
 
+/*************************************/
+/***  Handling named properties :  ***/
+/*************************************/
+
+const isProperty = props =>
+	isValue(props.hue) || isValue(props.saturation) || isValue(props.light) || isValue(props.alpha);
+
+const handleNamedProperties = props => {
+	let ref = null,
+		properties = null,
+		offsets = null;
+
+	// Color properties (hue, saturation, light, alpha) :
+	if (checkObjectType(props.properties, "properties") || isProperty(props)) {
+		properties = handleColorProperties({ ...props, ...props.properties });
+	} else if (isValue(props.color)) {
+		properties = handleCssColorStrings(props.color);
+	}
+
+	// Parent Color object as ref :
+	if (isValue(props.ref) || isValue(props.parentColor)) {
+		ref = checkRefType(props.ref) ?? checkRefType(props.parentColor);
+	}
+
+	// Color offsets from the parent Color object :
+	const hue = props.hueOffset;
+	const saturation = props.saturationOffset;
+	const light = props.lightOffset;
+	const alpha = props.alphaOffset;
+	if (checkObjectType(props.offsets, "offsets") || isProperty({ hue, saturation, light, alpha })) {
+		offsets = handleOffsets({ hue, saturation, light, alpha, ...props.offsets });
+	}
+	return { ref, properties, offsets };
+};
+
+const handleColorProperties = ({ hue, saturation, light, alpha }) => {
+	if (isValidHueString(hue)) hue = getValueFromHueString(hue);
+	checkObjectColorPropertiesTypes({ hue, saturation, light, alpha });
+	return { hue, saturation, light, alpha };
+};
+
+const handleOffsets = offsets => {
+	if (checkArgumentOffsetType(offsets)) return offsets;
+};
+/*
+
+
+
+
+
 /**************************************/
 /***  Handling CSS color strings :  ***/
 /**************************************/
@@ -362,7 +417,9 @@ const isCssHslString = colorString =>
 	/^hsla?\( *(-?\d+(\.\d*)?|-?\.\d+)(deg|turn)?( *, *| *\/ *| +)((-?\d+(\.\d*)?%?|-?\.\d+%?)( *, *| *\/ *| +)?){2,3} *\)$/i.test(
 		colorString
 	);
-const isValidHueString = colorString => /^ *(-?\d+(\.\d*)?|-?\.\d+)(deg|turn)? *$/i.test(colorString);
+const isValidHueString = colorString =>
+	(colorString instanceof String || typeof colorString === "string") &&
+	/^ *(-?\d+(\.\d*)?|-?\.\d+)(deg|turn)? *$/i.test(colorString);
 
 // Converts CSS hexa string to digital values :
 const hexStringToValue = (colorString = "") => {
@@ -456,9 +513,9 @@ const checkArgumentOffsetType = offsets => {
 			if (!isValue(offset)) continue; // If null || undefined, just ignore the assignment with no error.
 			if (offsetTypes.includes(typeof offset)) {
 				if (Number.isNaN(offset)) throw new Error(getErrorMessage.argumentOffsetIsNaN(property));
-				else continue;
 			} else throw new Error(getErrorMessage.argumentOffset(property, offset));
 		}
+		return true;
 	} else throw new Error(getErrorMessage.offsetsObject(offsets));
 };
 
@@ -472,6 +529,28 @@ const checkArgumentsType = args => {
 			throw new Error(getErrorMessage.argument(index, argument));
 		if (Number.isNaN(argument)) throw new Error(getErrorMessage.argumentIsNaN(index));
 	}
+};
+
+const checkObjectType = (object, properties = "") => {
+	if (isValue(object)) {
+		if (object instanceof Object || typeof object === "object") return true;
+		throw new Error(getErrorMessage.constructor.object.set(object, properties));
+	}
+	return false;
+};
+
+const checkObjectColorPropertiesTypes = colorProperties => {
+	for (const key in colorProperties) {
+		const colorProp = colorProperties[key];
+		if (isValue(colorProp) && !(colorProp instanceof Number) && typeof colorProp !== "number")
+			throw new Error(getErrorMessage.constructor.object.properties(key, colorProp));
+		if (Number.isNaN(colorProp)) throw new Error(getErrorMessage.constructor.object.isNaN(key));
+	}
+};
+
+const checkRefType = color => {
+	if (color instanceof Color) return color;
+	if (isValue(color)) throw new Error(getErrorMessage.constructor.object.ref(color));
 };
 
 // Properties type checking :
@@ -526,17 +605,49 @@ const argumentErrorMessage = (property, parameter) => `' ${displayWrongValue(
 )} ', a ${typeof parameter}, was passed for the ${property} argument, but a number is expected.
 ${checkDocsMessage(docsAnchors.arguments)}`;
 
-const colorIsNaNMessage = `' NaN ' was passed for the hue argument, but a number, a CSS string or a Color object is expected.
+const colorIsNaNMessage = `' NaN ' was passed for the hue argument, but a valid number, a CSS string or a Color object is expected.
 ${checkDocsMessage(docsAnchors.arguments)}`;
 
 const argumentIsNaNMessage =
-	property => `' NaN ' was passed for the ${property} argument, but a number is expected.
+	property => `' NaN ' was passed for the ${property} argument, but a valid number is expected.
 ${checkDocsMessage(docsAnchors.arguments)}`;
 
 //
 export const getErrorMessage = {
 	stringArgument: argument => `Argument must be a valid CSS color string, but "${argument}" was passed.
 ${checkDocsMessage(docsAnchors.arguments)}`,
+
+	constructor: {
+		object: {
+			set: (set, setName) => {
+				const offsetReturnOption = "() => number";
+				return `' ${displayWrongValue(
+					set
+				)} ', a ${typeof set}, was passed for the { ${setName} } argument, but a object is expected :
+${setName}?: { 
+	hue?: number | ${setName === "offsets" ? "() => number" : "string"}, 
+	saturation?: number${setName === "offsets" ? " | () => number" : ""}, 
+	light?: number${setName === "offsets" ? " | () => number" : ""}, 
+	alpha?: number${setName === "offsets" ? " | () => number" : ""} 
+}
+${checkDocsMessage(docsAnchors.arguments)}`;
+			},
+			properties: (property, propertyName) => `' ${displayWrongValue(
+				property
+			)} ', a ${typeof property}, was passed for the {properties.${propertyName}} argument, but a number${
+				propertyName === "hue" ? " or a <angle> string" : ""
+			} is expected.
+${checkDocsMessage(docsAnchors.arguments)}`,
+			isNaN: propertyName => `' NaN ' was passed for the {properties.${propertyName}} argument, but a valid number${
+				propertyName === "hue" ? " or a <angle> string" : ""
+			} is expected.
+${checkDocsMessage(docsAnchors.arguments)}`,
+			ref: ref => `' ${displayWrongValue(
+				ref
+			)} ', a ${typeof ref}, was passed for the { ref | parentColor } argument, but a Color object is expected.
+${checkDocsMessage(docsAnchors.arguments)}`,
+		},
+	},
 
 	argument: (index, parameter) => {
 		if (index === "0") return colorErrorMessage(parameter);
@@ -562,7 +673,8 @@ ${checkDocsMessage(docsAnchors.properties)}`,
 ${checkDocsMessage(docsAnchors.properties)}`,
 
 	argumentOffsetIsNaN:
-		property => `' NaN ' was passed for the ${property} offset argument, but a number is expected, or a function returning a number.
+		property => `' NaN ' was passed for the ${property} offset argument, but a number is expected, or a function returning a number :
+{ hue: number | () => number }
 ${checkDocsMessage(docsAnchors.properties)}`,
 
 	offsetsObject: returnValue => `' ${displayWrongValue(
