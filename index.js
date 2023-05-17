@@ -32,7 +32,6 @@
 	- feat : allowing the remplacement of all color properties through a new color property, 
 				who act like the contructor function, accepting the same arguments, with value, css color strings and Color object
 	- feat : switch to TS !
-	- fix : object should have parentColor or at least a color property
 	*/
 
 import { getErrorMessage } from "./src/errorMessages.js";
@@ -381,7 +380,7 @@ const handleNamedProperties = props => {
 	// Parent Color object as ref :
 	if (isValue(props.ref) || isValue(props.parentColor)) {
 		ref = checkTypes.parentColor(props.ref, Color) ?? checkTypes.parentColor(props.parentColor, Color);
-	}
+	} else if (properties === null) properties = defaultValues.properties; // if no ref and no properties : default values
 
 	// Color offsets from the parent Color object :
 	const hue = props.hueOffset;
