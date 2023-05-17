@@ -23,7 +23,6 @@
 
 /*
 	TODO: 
-	- feat : add named value object in constructor for a better DX
 	- feat : creation of "helpers" / ex: helper shadow = sat / 2 && light - 40% && alpha / 2  => shadows + color = shadowColor
 	- feat : method that export the status of the color (values, offset, hasReference) for debbug reason
 	- feat : easy dark/light theme integration ?
@@ -33,7 +32,11 @@
 	- feat : allowing the remplacement of all color properties through a new color property, 
 				who act like the contructor function, accepting the same arguments, with value, css color strings and Color object
 	- feat : switch to TS !
+	- fix : object should have parentColor or at least a color property
 	*/
+
+import { getErrorMessage } from "./src/errorMessages.js";
+import * as checkTypes from "./src/checkTypes.js";
 
 const defaultValues = {
 	properties: {
@@ -69,12 +72,12 @@ class Color {
 	) {
 		// If we get direct number value :
 		if (color instanceof Number || typeof color === "number" || color === null) {
-			checkArgumentsType(arguments);
+			checkTypes.directValueArgument(arguments);
 			this.setColorProperties({ hue: color, saturation, light, alpha });
 
 			// If we get a <angle> string for hue value ("180deg", "0.5turn"):
 		} else if (isValidHueString(color)) {
-			checkArgumentsType(arguments);
+			checkTypes.directValueArgument(arguments);
 			this.setColorProperties({ hue: getValueFromHueString(color), saturation, light, alpha });
 
 			// If we get a CSS color string :
@@ -86,17 +89,17 @@ class Color {
 		} else if (color instanceof Color) {
 			this.#colorReference = color;
 			const offsets = arguments[1];
-			checkArgumentOffsetType(offsets) && this.setColorOffsets(offsets);
+			checkTypes.offsetObjectArgument(offsets) && this.setColorOffsets(offsets);
 
 			// If we get a object with named properties :
-		} else if (color instanceof Object || typeof color === "object") {
+		} else if (checkTypes.isLiteralObject(color)) {
 			const constructor = handleNamedProperties(color);
 			this.#colorReference = constructor.ref;
 			constructor.properties && this.setColorProperties(constructor.properties);
 			constructor.offsets && this.setColorOffsets(constructor.offsets);
 
 			//
-		} else throw new Error(getErrorMessage.argument("0", color));
+		} else throw new Error(getErrorMessage.directValues("main", color, true));
 	}
 
 	#getValueFromOffset(value) {
@@ -105,7 +108,7 @@ class Color {
 
 		if (typeof valueOffset === "function") {
 			const valueFromCallback = valueOffset(refValue);
-			checkCallbackReturnValue(value, valueFromCallback);
+			checkTypes.callbackReturnValue(value, valueFromCallback);
 			return valueFromCallback;
 		} else return refValue + valueOffset;
 	}
@@ -124,7 +127,8 @@ class Color {
 		return this.#hue ?? hueFromOffset();
 	}
 	set hue(hue) {
-		if (checkPropertyType("hue", hue)) this.#hue = getFormatedHue(hue);
+		if (isValidHueString(hue)) hue = getValueFromHueString(hue);
+		if (checkTypes.property("hue", hue)) this.#hue = getFormatedHue(hue);
 	}
 
 	// Saturation :
@@ -133,7 +137,7 @@ class Color {
 		return this.#saturation ?? saturationFromOffset();
 	}
 	set saturation(saturation) {
-		if (checkPropertyType("saturation", saturation)) this.#saturation = getFormatedValue(saturation);
+		if (checkTypes.property("saturation", saturation)) this.#saturation = getFormatedValue(saturation);
 	}
 
 	// Light :
@@ -142,7 +146,7 @@ class Color {
 		return this.#light ?? lightFromOffset();
 	}
 	set light(light) {
-		if (checkPropertyType("light", light)) this.#light = getFormatedValue(light);
+		if (checkTypes.property("light", light)) this.#light = getFormatedValue(light);
 	}
 
 	// Alpha :
@@ -151,7 +155,7 @@ class Color {
 		return this.#alpha ?? alphaFromOffset();
 	}
 	set alpha(alpha) {
-		if (checkPropertyType("alpha", alpha)) this.#alpha = getFormatedValue(alpha);
+		if (checkTypes.property("alpha", alpha)) this.#alpha = getFormatedValue(alpha);
 	}
 
 	/*
@@ -167,7 +171,7 @@ class Color {
 		return this.#offsets.hue;
 	}
 	set hueOffset(hueOffset) {
-		if (checkOffsetType("hue", hueOffset)) this.#offsets.hue = hueOffset;
+		if (checkTypes.offset("hue", hueOffset)) this.#offsets.hue = hueOffset;
 	}
 
 	// Saturation offset :
@@ -175,7 +179,7 @@ class Color {
 		return this.#offsets.saturation;
 	}
 	set saturationOffset(saturationOffset) {
-		if (checkOffsetType("saturation", saturationOffset)) this.#offsets.saturation = saturationOffset;
+		if (checkTypes.offset("saturation", saturationOffset)) this.#offsets.saturation = saturationOffset;
 	}
 
 	// Light offset :
@@ -183,7 +187,7 @@ class Color {
 		return this.#offsets.light;
 	}
 	set lightOffset(lightOffset) {
-		if (checkOffsetType("light", lightOffset)) this.#offsets.light = lightOffset;
+		if (checkTypes.offset("light", lightOffset)) this.#offsets.light = lightOffset;
 	}
 
 	// Alpha offset :
@@ -191,7 +195,7 @@ class Color {
 		return this.#offsets.alpha;
 	}
 	set alphaOffset(alphaOffset) {
-		if (checkOffsetType("alpha", alphaOffset)) this.#offsets.alpha = alphaOffset;
+		if (checkTypes.offset("alpha", alphaOffset)) this.#offsets.alpha = alphaOffset;
 	}
 
 	/*
@@ -224,18 +228,18 @@ class Color {
 	}
 
 	// Set all properties at once :
-	setColorProperties(ColorProps = defaultValues.properties) {
-		this.#hue = getFormatedHue(ColorProps.hue ?? defaultValues.properties.hue);
-		this.#saturation = getFormatedValue(ColorProps.saturation ?? defaultValues.properties.saturation);
-		this.#light = getFormatedValue(ColorProps.light ?? defaultValues.properties.light);
-		this.#alpha = getFormatedValue(ColorProps.alpha ?? defaultValues.properties.alpha);
+	setColorProperties(properties = defaultValues.properties) {
+		this.#hue = getFormatedHue(properties.hue ?? defaultValues.properties.hue);
+		this.#saturation = getFormatedValue(properties.saturation ?? defaultValues.properties.saturation);
+		this.#light = getFormatedValue(properties.light ?? defaultValues.properties.light);
+		this.#alpha = getFormatedValue(properties.alpha ?? defaultValues.properties.alpha);
 	}
 
-	setColorOffsets(ColorOffsets = defaultValues.offsets) {
-		this.#offsets.hue = ColorOffsets.hue ?? defaultValues.offsets.hue;
-		this.#offsets.saturation = ColorOffsets.saturation ?? defaultValues.offsets.saturation;
-		this.#offsets.light = ColorOffsets.light ?? defaultValues.offsets.light;
-		this.#offsets.alpha = ColorOffsets.alpha ?? defaultValues.offsets.alpha;
+	setColorOffsets(offsets = defaultValues.offsets) {
+		this.#offsets.hue = offsets.hue ?? defaultValues.offsets.hue;
+		this.#offsets.saturation = offsets.saturation ?? defaultValues.offsets.saturation;
+		this.#offsets.light = offsets.light ?? defaultValues.offsets.light;
+		this.#offsets.alpha = offsets.alpha ?? defaultValues.offsets.alpha;
 	}
 }
 
@@ -368,7 +372,7 @@ const handleNamedProperties = props => {
 		offsets = null;
 
 	// Color properties (hue, saturation, light, alpha) :
-	if (checkObjectType(props.properties, "properties") || isProperty(props)) {
+	if (checkTypes.propsSetObject(props.properties, "properties") || isProperty(props)) {
 		properties = handleColorProperties({ ...props, ...props.properties });
 	} else if (isValue(props.color)) {
 		properties = handleCssColorStrings(props.color);
@@ -376,7 +380,7 @@ const handleNamedProperties = props => {
 
 	// Parent Color object as ref :
 	if (isValue(props.ref) || isValue(props.parentColor)) {
-		ref = checkRefType(props.ref) ?? checkRefType(props.parentColor);
+		ref = checkTypes.parentColor(props.ref, Color) ?? checkTypes.parentColor(props.parentColor, Color);
 	}
 
 	// Color offsets from the parent Color object :
@@ -384,7 +388,7 @@ const handleNamedProperties = props => {
 	const saturation = props.saturationOffset;
 	const light = props.lightOffset;
 	const alpha = props.alphaOffset;
-	if (checkObjectType(props.offsets, "offsets") || isProperty({ hue, saturation, light, alpha })) {
+	if (checkTypes.propsSetObject(props.offsets, "offsets") || isProperty({ hue, saturation, light, alpha })) {
 		offsets = handleOffsets({ hue, saturation, light, alpha, ...props.offsets });
 	}
 	return { ref, properties, offsets };
@@ -392,12 +396,12 @@ const handleNamedProperties = props => {
 
 const handleColorProperties = ({ hue, saturation, light, alpha }) => {
 	if (isValidHueString(hue)) hue = getValueFromHueString(hue);
-	checkObjectColorPropertiesTypes({ hue, saturation, light, alpha });
+	checkTypes.colorPropertiesInObject({ hue, saturation, light, alpha });
 	return { hue, saturation, light, alpha };
 };
 
 const handleOffsets = offsets => {
-	if (checkArgumentOffsetType(offsets)) return offsets;
+	if (checkTypes.offsetObjectArgument(offsets)) return offsets;
 };
 /*
 
@@ -490,217 +494,4 @@ const handleCssColorStrings = color => {
 		hslValues = hslStringToValue(color);
 	} else throw new Error(getErrorMessage.stringArgument(color));
 	return hslValues;
-};
-/*
-
-
-
-
-/************************/
-/***  Type checking :  ***/
-/************************/
-
-// Argument type checking :
-const offsetTypes = ["number", "function"];
-const offsetNames = ["hue", "saturation", "light", "alpha"];
-
-const checkArgumentOffsetType = offsets => {
-	if (!isValue(offsets)) return false; // If null || undefined, just ignore the assignment with no error.
-	if (offsets instanceof Object || typeof offsets === "object") {
-		for (const property in offsets) {
-			if (!offsetNames.includes(property)) continue; // Ignore extra properties.
-			const offset = offsets[property];
-			if (!isValue(offset)) continue; // If null || undefined, just ignore the assignment with no error.
-			if (offsetTypes.includes(typeof offset)) {
-				if (Number.isNaN(offset)) throw new Error(getErrorMessage.argumentOffsetIsNaN(property));
-			} else throw new Error(getErrorMessage.argumentOffset(property, offset));
-		}
-		return true;
-	} else throw new Error(getErrorMessage.offsetsObject(offsets));
-};
-
-const checkArgumentsType = args => {
-	// If the 1st argument is a direct number value or a hue <angle> string :
-	for (const index in args) {
-		if (index > 3) continue;
-		const argument = args[index];
-		if (index === "0" && (argument instanceof String || typeof argument === "string")) continue;
-		if (isValue(argument) && !(argument instanceof Number) && typeof argument !== "number")
-			throw new Error(getErrorMessage.argument(index, argument));
-		if (Number.isNaN(argument)) throw new Error(getErrorMessage.argumentIsNaN(index));
-	}
-};
-
-const checkObjectType = (object, properties = "") => {
-	if (isValue(object)) {
-		if (object instanceof Object || typeof object === "object") return true;
-		throw new Error(getErrorMessage.constructor.object.set(object, properties));
-	}
-	return false;
-};
-
-const checkObjectColorPropertiesTypes = colorProperties => {
-	for (const key in colorProperties) {
-		const colorProp = colorProperties[key];
-		if (isValue(colorProp) && !(colorProp instanceof Number) && typeof colorProp !== "number")
-			throw new Error(getErrorMessage.constructor.object.properties(key, colorProp));
-		if (Number.isNaN(colorProp)) throw new Error(getErrorMessage.constructor.object.isNaN(key));
-	}
-};
-
-const checkRefType = color => {
-	if (color instanceof Color) return color;
-	if (isValue(color)) throw new Error(getErrorMessage.constructor.object.ref(color));
-};
-
-// Properties type checking :
-const checkOffsetType = (property, offset) => {
-	if (!isValue(offset)) return false; // If null || undefined, just ignore the assignment with no error.
-	if (offsetTypes.includes(typeof offset)) {
-		if (Number.isNaN(offset)) throw new Error(getErrorMessage.offsetIsNaN(property));
-		else return true;
-	}
-	throw new Error(getErrorMessage.offset(property, offset));
-};
-const checkPropertyType = (property, value) => {
-	if (!isValue(value)) return false; // If null || undefined, just ignore the assignment with no error.
-	if (typeof value === "number") {
-		if (Number.isNaN(value)) throw new Error(getErrorMessage.propertyIsNaN(property));
-		else return true;
-	}
-	throw new Error(getErrorMessage.property(property, value));
-};
-
-// Callback return type checking :
-const checkCallbackReturnValue = (property, value) => {
-	if (typeof value !== "number") throw new Error(getErrorMessage.callback(property, value));
-	if (Number.isNaN(value)) throw new Error(getErrorMessage.callbackIsNaN(property));
-};
-/*
-
-
-
-
-
-/***************************/
-/***  Handling errors :  ***/
-/***************************/
-
-const displayWrongValue = value => (typeof value !== "function" ? JSON.stringify(value) : value);
-const docsAnchors = {
-	presentation: "the-color-object",
-	arguments: "constructor-parameters",
-	properties: "properties",
-};
-const checkDocsMessage = (where = docsAnchors.presentation) =>
-	`Check docs at https://github.com/Lx-Ctn/color/#${where}- to know more.`;
-
-const colorErrorMessage = parameter => `' ${displayWrongValue(
-	parameter
-)} ', a ${typeof parameter}, was passed for the hue argument, but a number, a CSS color string, a <angle> string or a Color object is expected.
-${checkDocsMessage(docsAnchors.arguments)}`;
-
-const argumentErrorMessage = (property, parameter) => `' ${displayWrongValue(
-	parameter
-)} ', a ${typeof parameter}, was passed for the ${property} argument, but a number is expected.
-${checkDocsMessage(docsAnchors.arguments)}`;
-
-const colorIsNaNMessage = `' NaN ' was passed for the hue argument, but a valid number, a CSS string or a Color object is expected.
-${checkDocsMessage(docsAnchors.arguments)}`;
-
-const argumentIsNaNMessage =
-	property => `' NaN ' was passed for the ${property} argument, but a valid number is expected.
-${checkDocsMessage(docsAnchors.arguments)}`;
-
-//
-export const getErrorMessage = {
-	stringArgument: argument => `Argument must be a valid CSS color string, but "${argument}" was passed.
-${checkDocsMessage(docsAnchors.arguments)}`,
-
-	constructor: {
-		object: {
-			set: (set, setName) => {
-				const offsetReturnOption = "() => number";
-				return `' ${displayWrongValue(
-					set
-				)} ', a ${typeof set}, was passed for the { ${setName} } argument, but a object is expected :
-${setName}?: { 
-	hue?: number | ${setName === "offsets" ? "() => number" : "string"}, 
-	saturation?: number${setName === "offsets" ? " | () => number" : ""}, 
-	light?: number${setName === "offsets" ? " | () => number" : ""}, 
-	alpha?: number${setName === "offsets" ? " | () => number" : ""} 
-}
-${checkDocsMessage(docsAnchors.arguments)}`;
-			},
-			properties: (property, propertyName) => `' ${displayWrongValue(
-				property
-			)} ', a ${typeof property}, was passed for the {properties.${propertyName}} argument, but a number${
-				propertyName === "hue" ? " or a <angle> string" : ""
-			} is expected.
-${checkDocsMessage(docsAnchors.arguments)}`,
-			isNaN: propertyName => `' NaN ' was passed for the {properties.${propertyName}} argument, but a valid number${
-				propertyName === "hue" ? " or a <angle> string" : ""
-			} is expected.
-${checkDocsMessage(docsAnchors.arguments)}`,
-			ref: ref => `' ${displayWrongValue(
-				ref
-			)} ', a ${typeof ref}, was passed for the { ref | parentColor } argument, but a Color object is expected.
-${checkDocsMessage(docsAnchors.arguments)}`,
-		},
-	},
-
-	argument: (index, parameter) => {
-		if (index === "0") return colorErrorMessage(parameter);
-		const property = index === "1" ? "saturation" : index === "2" ? "light" : "alpha";
-		return argumentErrorMessage(property, parameter);
-	},
-	argumentIsNaN: index => {
-		if (index === "0") return colorIsNaNMessage;
-		const property = index === "1" ? "saturation" : index === "2" ? "light" : "alpha";
-		return argumentIsNaNMessage(property);
-	},
-	property: (property, returnValue) => `The "${property}" property return ' ${displayWrongValue(
-		returnValue
-	)} ', a ${typeof returnValue}, but must return a number.
-${checkDocsMessage(docsAnchors.properties)}`,
-
-	propertyIsNaN: property => `The "${property}" property return ' NaN ', but must return a number.
-${checkDocsMessage(docsAnchors.properties)}`,
-
-	argumentOffset: (property, returnValue) => `' ${displayWrongValue(
-		returnValue
-	)} ', a ${typeof returnValue}, was passed for the ${property} offset argument, but a number is expected, or a function returning a number.
-${checkDocsMessage(docsAnchors.properties)}`,
-
-	argumentOffsetIsNaN:
-		property => `' NaN ' was passed for the ${property} offset argument, but a number is expected, or a function returning a number :
-{ hue: number | () => number }
-${checkDocsMessage(docsAnchors.properties)}`,
-
-	offsetsObject: returnValue => `' ${displayWrongValue(
-		returnValue
-	)} ', a ${typeof returnValue}, was passed for the offsets argument, but a object is expected :
-	offsets = { hue, saturation, light, alpha }; 
-${checkDocsMessage(docsAnchors.properties)}`,
-
-	offset: (property, returnValue) => `The "${property}Offset" property return ' ${displayWrongValue(
-		returnValue
-	)} ', a ${typeof returnValue}, but must return a number, or a function returning a number.
-${checkDocsMessage(docsAnchors.properties)}`,
-
-	offsetIsNaN:
-		property => `The "${property}Offset" property return ' NaN ', but must return a number, or a function returning a number.
-${checkDocsMessage(docsAnchors.properties)}`,
-
-	callback: (
-		property,
-		returnValue
-	) => `Callback in your "${property}Offset" property return ' ${displayWrongValue(returnValue)} '${
-		typeof returnValue === "undefined" ? "" : ", a " + typeof returnValue
-	}, but must return a number.
-${checkDocsMessage(docsAnchors.properties)}`,
-
-	callbackIsNaN:
-		property => `Callback in your "${property}Offset" property return ' NaN ' but must return a valid number.
-${checkDocsMessage(docsAnchors.properties)}`,
 };
