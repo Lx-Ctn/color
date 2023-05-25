@@ -98,7 +98,7 @@ class Color {
 			constructor.offsets && this.setColorOffsets(constructor.offsets);
 
 			//
-		} else throw new Error(getErrorMessage.directValues("main", color, true));
+		} else throw new TypeError(getErrorMessage.directValues("main", color, true));
 	}
 
 	#getValueFromOffset(value) {
@@ -422,7 +422,7 @@ const isCssHslString = colorString =>
 	);
 const isValidHueString = colorString =>
 	(colorString instanceof String || typeof colorString === "string") &&
-	/^ *(-?\d+(\.\d*)?|-?\.\d+)(deg|turn)? *$/i.test(colorString);
+	/^ *(-?\d+(\.\d*)?|-?\.\d+)(deg|turn|rad|grad)? *$/i.test(colorString);
 
 // Converts CSS hexa string to digital values :
 const hexStringToValue = (colorString = "") => {
@@ -467,15 +467,17 @@ const hslStringToValue = (colorString = "") => {
 
 // Converts hue string to hue value :
 const getValueFromHueString = (colorString = "") => {
-	const stringValue = colorString.match(/^ *(.+)(deg|turn)? *$/i)[1];
-	const value = parseFloat(stringValue);
-	return colorString.includes("turn") ? value * 360 : value;
+	const [, stringValue, type] = colorString.match(/^ *(.+?)(deg|turn|rad|grad)? *$/i);
+	const ratio = type === "turn" ? 360 : type === "grad" ? 360 / 400 : type === "rad" ? 360 / (2 * Math.PI) : 1;
+	const value = parseFloat(stringValue) * ratio;
+	return value;
 };
 
+// Converts css string value to number value :
 const handleStringtoValue = (string, max) => {
 	if (string === "none") string = "0";
 	const rawValue = parseFloat(string);
-	if (Number.isNaN(rawValue)) throw new Error(getErrorMessage.stringArgument(string));
+	if (Number.isNaN(rawValue)) throw new TypeError(getErrorMessage.stringArgument(string));
 	const value = string.includes("%") ? rawValue : rawValue * max;
 	return getFormatedValue(value, max);
 };
@@ -491,6 +493,6 @@ const handleCssColorStrings = color => {
 		hslValues = rgbToHsl(rgbaValues);
 	} else if (isCssHslString(color)) {
 		hslValues = hslStringToValue(color);
-	} else throw new Error(getErrorMessage.stringArgument(color));
+	} else throw new TypeError(getErrorMessage.stringArgument(color));
 	return hslValues;
 };

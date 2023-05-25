@@ -22,10 +22,10 @@ export const offsetObjectArgument = offsets => {
 			const value = offsets[propertyName];
 			if (!isValue(value)) continue; // If null || undefined, just ignore the assignment with no error.
 			if (!offsetTypes.includes(typeof value) || Number.isNaN(value))
-				throw new Error(getErrorMessage.offset(propertyName, value, true));
+				throw new TypeError(getErrorMessage.offset(propertyName, value, true));
 		}
 		return true;
-	} else throw new Error(getErrorMessage.object.set(offsets, "offsets"));
+	} else throw new TypeError(getErrorMessage.object.set(offsets, "offsets"));
 };
 
 export const directValueArgument = args => {
@@ -45,7 +45,7 @@ export const directValueArgument = args => {
 export const propsSetObject = (object, setName = "") => {
 	if (isValue(object)) {
 		if (isLiteralObject(object)) return true;
-		throw new Error(getErrorMessage.object.set(object, setName));
+		throw new TypeError(getErrorMessage.object.set(object, setName));
 	}
 	return false;
 };
@@ -58,31 +58,31 @@ export const colorPropertiesInObject = colorProperties => {
 			(isValue(colorProp) && !(colorProp instanceof Number) && typeof colorProp !== "number") ||
 			Number.isNaN(colorProp)
 		)
-			throw new Error(getErrorMessage.object.properties(key, colorProp));
+			throw new TypeError(getErrorMessage.object.properties(key, colorProp));
 	}
 };
 
 export const parentColor = (color, colorType) => {
 	if (color instanceof colorType) return color;
-	if (isValue(color)) throw new Error(getErrorMessage.object.parentColor(color));
+	if (isValue(color)) throw new TypeError(getErrorMessage.object.parentColor(color));
 };
 
 // Properties type checking :
 export const offset = (propertyName, value, isInConstructor = false) => {
 	if (!isValue(value)) return false; // If null || undefined, just ignore the assignment with no error.
 	if (!offsetTypes.includes(typeof value) || Number.isNaN(value))
-		throw new Error(getErrorMessage.offset(propertyName, value, isInConstructor));
+		throw new TypeError(getErrorMessage.offset(propertyName, value, isInConstructor));
 	return true;
 };
 export const property = (propertyName, value, isInConstructor = false) => {
 	if (!isValue(value)) return false; // If null || undefined, just ignore the assignment with no error.
 	if ((!(value instanceof Number) && typeof value !== "number") || Number.isNaN(value))
-		throw new Error(getErrorMessage.directValues(propertyName, value, isInConstructor));
+		throw new TypeError(getErrorMessage.directValues(propertyName, value, isInConstructor));
 	return true;
 };
 
 // Callback return type checking for offsets :
 export const callbackReturnValue = (propertyName, value) => {
 	if ((!(value instanceof Number) && typeof value !== "number") || Number.isNaN(value))
-		throw new Error(getErrorMessage.callback(propertyName, value));
+		throw new TypeError(getErrorMessage.callback(propertyName, value));
 };
