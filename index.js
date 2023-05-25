@@ -327,7 +327,7 @@ const hslToRgb = (hue, saturation, light) => {
 
 	let red, green, blue;
 
-	if (saturation == 0) {
+	if (saturation === 0) {
 		red = green = blue = light; // achromatic
 	} else {
 		function hueToRgb(p, q, t) {
