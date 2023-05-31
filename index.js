@@ -444,10 +444,11 @@ const rgbStringToValue = (colorString = "") => {
 	const stringValues = colorString.match(
 		/^rgba?\( *(?<red>.+?)(?: *, *| *\/ *| +)(?<green>.+?)(?: *, *| *\/ *| +)(?<blue>.+?)((?: *, *| *\/ *| +)(?<alpha>.+?)?)? *\)$/i
 	).groups;
-	const red = handleStringtoValue(stringValues.red, 255);
-	const green = handleStringtoValue(stringValues.green, 255);
-	const blue = handleStringtoValue(stringValues.blue, 255);
-	const alpha = handleStringtoValue(stringValues.alpha ?? "255", 255);
+
+	const red = handleStringtoValue(stringValues.red, true);
+	const green = handleStringtoValue(stringValues.green, true);
+	const blue = handleStringtoValue(stringValues.blue, true);
+	const alpha = (handleStringtoValue(stringValues.alpha ?? "100") / 100) * 255;
 	return { red, green, blue, alpha };
 };
 
@@ -458,9 +459,9 @@ const hslStringToValue = (colorString = "") => {
 	).groups;
 
 	const hue = getValueFromHueString(stringValues.hue);
-	const saturation = handleStringtoValue(stringValues.saturation, 100);
-	const light = handleStringtoValue(stringValues.light, 100);
-	const alpha = handleStringtoValue(stringValues.alpha ?? "100", 100);
+	const saturation = handleStringtoValue(stringValues.saturation);
+	const light = handleStringtoValue(stringValues.light);
+	const alpha = handleStringtoValue(stringValues.alpha ?? "100");
 	return { hue, saturation, light, alpha };
 };
 
@@ -473,12 +474,17 @@ const getValueFromHueString = (colorString = "") => {
 };
 
 // Converts css string value to number value :
-const handleStringtoValue = (string, max) => {
+const handleStringtoValue = (string, isRgb = false) => {
 	if (string === "none") string = "0";
 	const rawValue = parseFloat(string);
 	if (Number.isNaN(rawValue)) throw new TypeError(getErrorMessage.stringArgument(string));
-	const value = string.includes("%") ? rawValue : rawValue * max;
-	return getFormatedValue(value, max);
+
+	if (isRgb) {
+		const value = string.includes("%") ? (rawValue / 100) * 255 : rawValue;
+		return getFormatedValue(value, 255);
+	}
+	const value = string.includes("%") ? rawValue : rawValue * 100;
+	return getFormatedValue(value, 100);
 };
 
 // Return HSLA values from CSS color string :
