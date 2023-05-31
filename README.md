@@ -442,7 +442,7 @@ This value will be fixed, independent of the reference value.
    > All next parameters will be ignored.
 -  **_Color object_** : An other Color object can be passed, to be the reference on which this new Color will be based.
    > All next parameters become _offset_ to shift from this reference.
--  **_Object_** : An object with a set of named properties to easily set any option of the Color object in one go. See the <a href="#parameter-object-details-">parameter object details</a> section to know more.
+-  **_Object_** : An object with a collection of named properties to easily set any option of the Color object in one go. See the <a href="#parameter-object-details-">parameter object details</a> section to know more.
 
    > All next parameters will be ignored.
 
@@ -493,7 +493,7 @@ This value will be fixed, independent of the reference value.
 If the 1<sup>st</sup> parameter is a object, all Color properties can be set in one go :
 
 -  Every properties are optionnal.
--  If a color property is set both directly ( `{ hue }` ) and in a set of properties object ( `{ properties: { hue } }` ), the value in the set will take priority and the direct property will be ignored.
+-  If a color property is set both directly ( `{ hue }` ) and in a collection of properties object ( `{ properties: { hue } }` ), the value in the set will take priority and the direct property will be ignored.
 -  Idem for offsets.
 -  `parentColor` is a alias for `ref` to assign a parent Color. If both are put, `parentColor` will be ignored.
 
@@ -505,7 +505,7 @@ If the 1<sup>st</sup> parameter is a object, all Color properties can be set in 
    light: number,
    alpha: number,
 
-   // Set of color properties :
+   // Collection of color properties :
    properties: {
       hue : number | <angle> string,
       saturation: number,
@@ -514,7 +514,7 @@ If the 1<sup>st</sup> parameter is a object, all Color properties can be set in 
    }
 
    // CSS color string (hexa, rgb or hsl) :
-   color: string,
+   css: string,
 
    // Color reference :
    ref: Color,
@@ -526,7 +526,7 @@ If the 1<sup>st</sup> parameter is a object, all Color properties can be set in 
    lightOffset: number | (parentLight) => number,
    alphaOffset: number | (parentAlpha) => number,
 
-   // Set of offsets :
+   // Collection of offsets :
    Offsets: {
       hue : number | (parentHue) => number,
       saturation: number | (parentSaturation) => number,

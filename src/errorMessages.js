@@ -32,12 +32,14 @@ ${checkDocsMessage(docsAnchors.arguments)}`,
 
 	object: {
 		set: (set, setName) =>
-			argumentsMessageLayout(set, `${setName} set`, expectedTypes.object.set, setBlueprint(setName)),
+			argumentsMessageLayout(set, `${setName} collection`, expectedTypes.object.set, setBlueprint(setName)),
 
 		properties: (propertyName, value) => {
 			const name = `{ properties.${propertyName} }`;
 			return argumentsMessageLayout(value, name, expectedTypes.object.properties(propertyName));
 		},
+
+		css: wrongCssString => argumentsMessageLayout(wrongCssString, "{ css }", expectedTypes.object.css),
 
 		parentColor: parentColor =>
 			argumentsMessageLayout(parentColor, "{ ref | parentColor }", expectedTypes.object.parentColor),
@@ -58,6 +60,7 @@ const expectedTypes = {
 		set: "object",
 		properties: propertyName => `number${propertyName === "hue" ? " or a <angle> string" : ""}`,
 		parentColor: "Color object",
+		css: "valid color CSS string",
 	},
 };
 /*
@@ -76,7 +79,7 @@ ${checkDocsMessage(docsAnchors.arguments)}`;
 const propertiesMessageLayout = (value, propertyName, expected) => {
 	return `The ${propertyName} property return ${displayWrongValue(
 		value
-	)}, but must return a ${displayExpectedTypes(value, expected)}.
+	)} but must return a ${displayExpectedTypes(value, expected)}.
 ${checkDocsMessage(docsAnchors.properties)}`;
 };
 

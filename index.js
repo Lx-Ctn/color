@@ -15,8 +15,8 @@
  * Offset properties allows a dynamic offset with the reference's value.
  * => Ideal for dynamic color theme management.
  *
- * @param	{Color|string|number} [color=0] - Set values (from a other Color or a CSS color string) or set hue from number (optional - 0 by default - 0° Hue get a pure red color)
- * @param	{number}	[saturation=100] - Set the saturation value (optional - 100% by default)
+ * @param	{Color|string|number|object} [color=0] - Set values (from a other Color or a CSS color string) or set hue from number (optional - 0 by default - 0° Hue get a pure red color)
+ * @param	{number|object}	[saturation=100] - Set the saturation value (optional - 100% by default)
  * @param	{number}	[light=50]	- Set the light value (optional - 50% by default)
  * @param	{number}	[alpha=100] - Set the alpha value (optional - 100% by default)
  */
@@ -26,6 +26,7 @@
 	- feat : creation of "helpers" / ex: helper shadow = sat / 2 && light - 40% && alpha / 2  => shadows + color = shadowColor
 	- feat : method that export the status of the color (values, offset, hasReference) for debbug reason
 	- feat : easy dark/light theme integration ?
+	- feat : set limits to color variation
 	- feat : add a remove method to reset fixed properties
 	- doc : add useful exemple in the README section 
 	- feat : add .parent with .ref alias to get parent color
@@ -312,7 +313,6 @@ const rgbToHsl = ({ red, green, blue, alpha = 255 }) => {
 	saturation = roundAt1Decimal(saturation * 100);
 	light = roundAt1Decimal(light * 100);
 	alpha = roundAt1Decimal(alpha * 100);
-
 	return { hue, saturation, light, alpha };
 };
 
@@ -373,8 +373,8 @@ const handleNamedProperties = props => {
 	// Color properties (hue, saturation, light, alpha) :
 	if (checkTypes.propsSetObject(props.properties, "properties") || isProperty(props)) {
 		properties = handleColorProperties({ ...props, ...props.properties });
-	} else if (isValue(props.color)) {
-		properties = handleCssColorStrings(props.color);
+	} else if (isValue(props.css)) {
+		properties = handleCssColorStrings(props.css, true);
 	}
 
 	// Parent Color object as ref :
@@ -444,11 +444,10 @@ const rgbStringToValue = (colorString = "") => {
 	const stringValues = colorString.match(
 		/^rgba?\( *(?<red>.+?)(?: *, *| *\/ *| +)(?<green>.+?)(?: *, *| *\/ *| +)(?<blue>.+?)((?: *, *| *\/ *| +)(?<alpha>.+?)?)? *\)$/i
 	).groups;
-
 	const red = handleStringtoValue(stringValues.red, 255);
 	const green = handleStringtoValue(stringValues.green, 255);
 	const blue = handleStringtoValue(stringValues.blue, 255);
-	const alpha = handleStringtoValue(stringValues.alpha ?? "100", 100);
+	const alpha = handleStringtoValue(stringValues.alpha ?? "255", 255);
 	return { red, green, blue, alpha };
 };
 
@@ -483,7 +482,7 @@ const handleStringtoValue = (string, max) => {
 };
 
 // Return HSLA values from CSS color string :
-const handleCssColorStrings = color => {
+const handleCssColorStrings = (color, isInObject = false) => {
 	let hslValues;
 	if (isCssHexString(color)) {
 		const rgbaValues = hexStringToValue(color);
@@ -493,6 +492,8 @@ const handleCssColorStrings = color => {
 		hslValues = rgbToHsl(rgbaValues);
 	} else if (isCssHslString(color)) {
 		hslValues = hslStringToValue(color);
+	} else if (isInObject) {
+		throw new TypeError(getErrorMessage.object.css(color));
 	} else throw new TypeError(getErrorMessage.stringArgument(color));
 	return hslValues;
 };
