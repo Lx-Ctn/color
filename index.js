@@ -38,7 +38,7 @@
 import { getErrorMessage } from "./src/errorMessages.js";
 import * as checkTypes from "./src/checkTypes.js";
 
-const defaultValues = {
+export const defaultValues = {
 	properties: {
 		hue: 0,
 		saturation: 100,
@@ -413,22 +413,22 @@ const handleOffsets = offsets => {
 /**************************************/
 
 // Cheking for valid CSS strings format
-const isCssHexString = colorString => /^#(\d|[a-f]){3,}$/i.test(colorString);
+const isCssHexString = colorString => /^ *#(\d|[a-f]){3,} *$/i.test(colorString);
 const isCssRgbString = colorString =>
-	/^rgba?\( *((-?\d+(\.\d*)?%?|-?\.\d+%?|none)( *, *| *\/ *| +)?){3,4} *\)$/i.test(colorString);
+	/^ *rgba?\( *(((-|\+)?\d+(\.\d*)?%?|-?\.\d+%?|none)( *, *| *\/ *| +)?){3,4} *\) *$/i.test(colorString);
 const isCssHslString = colorString =>
-	/^hsla?\( *(-?\d+(\.\d*)?|-?\.\d+)(deg|turn)?( *, *| *\/ *| +)((-?\d+(\.\d*)?%?|-?\.\d+%?)( *, *| *\/ *| +)?){2,3} *\)$/i.test(
+	/^ *hsla?\( *((-|\+)?\d+(\.\d*)?|-?\.\d+) *(deg|turn|rad|grad)?( *, *| *\/ *| +)(((-|\+)?\d+(\.\d*)?%?|-?\.\d+%?)( *, *| *\/ *| +)?){2,3} *\) *$/i.test(
 		colorString
 	);
 const isValidHueString = colorString =>
 	(colorString instanceof String || typeof colorString === "string") &&
-	/^ *(-?\d+(\.\d*)?|-?\.\d+)(deg|turn|rad|grad)? *$/i.test(colorString);
+	/^ *((-|\+)?\d+(\.\d*)?|-?\.\d+) *(deg|turn|rad|grad)? *$/i.test(colorString);
 
 // Converts CSS hexa string to digital values :
 const hexStringToValue = (colorString = "") => {
+	colorString = colorString.trim();
 	const isShort = colorString.length < 7; // For the short hex syntax like "#f00"
 	if (isShort) colorString = colorString.replace(/^#(.)(.)(.)(.?)/i, "#$1$1$2$2$3$3$4$4");
-
 	const hex = colorString.match(/^#(?<red>.{2})(?<green>.{2})(?<blue>.{2})(?<alpha>.{0,2})/).groups;
 
 	const red = parseInt(hex.red, 16);
@@ -442,7 +442,7 @@ const hexStringToValue = (colorString = "") => {
 // Converts CSS rgb string to digital values :
 const rgbStringToValue = (colorString = "") => {
 	const stringValues = colorString.match(
-		/^rgba?\( *(?<red>.+?)(?: *, *| *\/ *| +)(?<green>.+?)(?: *, *| *\/ *| +)(?<blue>.+?)((?: *, *| *\/ *| +)(?<alpha>.+?)?)? *\)$/i
+		/^ *rgba?\( *(?<red>.+?)(?: *, *| *\/ *| +)(?<green>.+?)(?: *, *| *\/ *| +)(?<blue>.+?)((?: *, *| *\/ *| +)(?<alpha>.+?)?)? *\) *$/i
 	).groups;
 
 	const red = handleStringtoValue(stringValues.red, true);
@@ -455,7 +455,7 @@ const rgbStringToValue = (colorString = "") => {
 // Converts CSS hsl string to digital values :
 const hslStringToValue = (colorString = "") => {
 	const stringValues = colorString.match(
-		/^hsla?\( *(?<hue>.+?)(?: *, *| *\/ *| +)(?<saturation>.+?)(?: *, *| *\/ *| +)(?<light>.+?)((?: *, *| *\/ *| +)(?<alpha>.+?)?)? *\)$/i
+		/^ *hsla?\( *(?<hue>.+?)(?: *, *| *\/ *| +)(?<saturation>.+?)(?: *, *| *\/ *| +)(?<light>.+?)((?: *, *| *\/ *| +)(?<alpha>.+?)?)? *\) *$/i
 	).groups;
 
 	const hue = getValueFromHueString(stringValues.hue);
@@ -467,7 +467,8 @@ const hslStringToValue = (colorString = "") => {
 
 // Converts hue string to hue value :
 const getValueFromHueString = (colorString = "") => {
-	const [, stringValue, type] = colorString.match(/^ *(.+?)(deg|turn|rad|grad)? *$/i);
+	let [, stringValue, type] = colorString.match(/^ *(.+?)(deg|turn|rad|grad)? *$/i);
+	if (type) type = type.toLowerCase();
 	const ratio = type === "turn" ? 360 : type === "grad" ? 360 / 400 : type === "rad" ? 360 / (2 * Math.PI) : 1;
 	const value = parseFloat(stringValue) * ratio;
 	return value;
