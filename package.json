@@ -1,12 +1,13 @@
 {
 	"name": "@lxweb/color",
-	"version": "0.3.0",
+	"version": "0.4.1",
 	"description": "Color is a library to easily handle color variations to create dynamic color theme or complexe color animations for the web.",
 	"author": "Alexandre Cottin (Lx Ctn) <web@lxctn.com>",
 	"license": "MIT",
 	"main": "index.js",
 	"files": [
 		"index.js",
+		"src/",
 		"README.md",
 		"assets/",
 		"!assets/Color Wheel.ai"
