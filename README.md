@@ -3,13 +3,6 @@
 
 ---
 
-<br>
-
-> **Attention :**
-> This version will soon change with breaking changes,
-> A single object parameter will allow to have named arguments for a better developper experience.
-
-<br>
 <ul>
    <li><a href="#introduction-">Introduction</a></li>
    <li><a href="#in-short-">In short</a></li>
@@ -26,6 +19,7 @@
       <li><a href="#create-a-color-">Creation of a Color</a></li>
       <li><a href="#create-a-child-color-">Creation of a child Color</a></li>
       <li><a href="#constructor-parameters-">Constructor parameters</a></li>
+      <li><a href="#parameter-object-details-">Parameter object details</a></li>
       <li><a href="#properties-">Properties</a></li>
       <li><a href="#methods-">Methods</a></li>
       </ul>
@@ -58,8 +52,12 @@ That allows you to create a dynamic color theme through a set of linked `Color` 
 A simple HSL model :
 
 ```js
-const {hue, saturation, light} = {360, 90, 70}
-const mainColor = new Color(hue, saturation, light); // a soft red
+const {hue, saturation, light} = {360, 90, 70} // A soft red
+
+// Named properties :
+const mainColor = new Color({hue, saturation, light});
+// Or direct values :
+const mainColor = new Color(hue, saturation, light);
 ```
 
 <br>
@@ -67,7 +65,9 @@ const mainColor = new Color(hue, saturation, light); // a soft red
 References to link Color through a dynamic theme :
 
 ```js
-const darkMainColor = new Color(mainColor, null, -30);
+const darkOffsets = { light: -30 };
+const darkMainColor = new Color({ ref: mainColor, offsets: darkOffsets });
+
 // mainColor as reference, with a -30 offset in light :
 darMainColor.toHsl(); // "hsl(360, 90%, 40%)"
 ```
@@ -83,10 +83,13 @@ darkMainColor.toHsl(); // "hsl(30, 90%, 40%)"
 Simple offset or callback to fine-tune the relation between colors :
 
 ```js
-const alpha = 30;
-const shadowColor = new Color(mainColor, sat => sat / 2, -40, alpha);
+const offsets = {
+	saturation: sat => sat / 2,
+	alpha: -30,
+};
+const shadowColor = new Color(mainColor, alpha);
 // Callback give access to the reference property value
-shadowColor.toHsl(); // "hsla(30, 45%, 30%, 30%)"
+shadowColor.toHsl(); // "hsla(30, 45%, 30%, 70%)"
 ```
 
 <br>
@@ -287,11 +290,27 @@ new Color(hue, saturation, light, alpha);
 <br>
 
 ```js
-new Color("#ff0099");
+const properties = {
+	hue: 240,
+	saturation: 100,
+	light: 30,
+	alpha: 80,
+};
+new Color(properties);
+new Color({ properties, offsets: {} });
+```
+
+<dl><dd><dl><dd>Color can take an object as parameter, with named properties to ease the DX.</dd></dl></dd></dl>
+<br>
+
+```js
+new Color("#ff0000");
+new Color("rgb(255, 0, 0)");
+new Color("hsl(360, 100, 50)");
 ```
 
 <dl><dd><dl><dd>
-Color accept CSS Hexadeximal color string as parameter.<br>
+Color accept CSS color string as parameter.<br>
 All Color properties will be create from the CSS value, every arguments following the string will be ignored. 
 </dd></dl></dd></dl>
 <br>
@@ -323,8 +342,10 @@ It will be the reference to keep a dynamic link to its properties.
 
 ```js
 const mainColor = new Color(360, 90, 70);
-const darkMainColor = new Color(mainColor, null, -30);
+
 // mainColor as reference, with a -30 offset in light :
+const darkMainColor = new Color(mainColor, { light: -30 });
+
 darMainColor.toHsl(); // "hsl(360, 90%, 40%)"
 ```
 
@@ -343,11 +364,18 @@ darkMainColor.toHsl(); // "hsl(30, 90%, 40%)"
 <br>
 
 ```js
-new Color(ParentColor, offsetSat, offsetLight, offsetAlpha);
+new Color(ParentColor, { saturation: -30, light: +20 });
 ```
 
-<dl><dd><dl><dd>Will create a child <i>Color</i> from the <code>ParentColor</code> object with optional offsets in <i>saturation</i>, <i>light</i> and <i>alpha</i>.<br>
-Offset in <i>hue</i> can also be set after the child Color creation via the <code>hueOffset</code> property.
+<dl><dd><dl><dd>Will create a child <i>Color</i> from the <code>ParentColor</code> object with optional offsets in <i>hue</i>, <i>saturation</i>, <i>light</i> or <i>alpha</i>.
+</dd></dl></dd></dl>
+<br>
+
+```js
+new Color({ ref: ParentColor, offsets: { saturation: -30, light: +20 } });
+```
+
+<dl><dd><dl><dd>Color can take an object as parameter, with named properties to ease the DX.
 </dd></dl></dd></dl>
 <br>
 
@@ -359,6 +387,7 @@ new Color(ParentColor);
 
 **Default values :**
 
+-  `hueOffset = 0`, No shift from the reference _hue_.
 -  `saturationOffset = 0`, No shift from the reference _saturation_.
 -  `lightOffset = 0`, No shift from the reference _light_.
 -  `alphaOffset = 0`, No shift from the reference _alpha_.
@@ -403,50 +432,126 @@ This value will be fixed, independent of the reference value.
 
 <dl>
 <code><b>Color</b></code> <i>(Optional)</i>
-<dd><dl><dd>The 1<sup>st</sup> parameter accept 3 types of value :
+<dd><dl><dd>The 1<sup>st</sup> parameter accepts 4 types of value :
 
 -  **_Hue_** : A number for the color position on the color wheel.
-   It will still work if the number is outside the usual position (between 0 and 360°).
+   It will still work if the number is outside the usual position (between 0 and 360°), or a CSS `<angle>` string ( deg | turn | rad | grad ), that will determine the _hue_ value.
    > For exemple `-120` will have the same result as `240` (-120 + 360 = 240 : same position on the wheel).
--  **_CSS color string_** : A string with a 3, 4 (with alpha), 6 or 8 (with alpha) hexadecimal color format that will determine the _hue_, _saturation_, _light_ and _alpha_ values.
-   > All next parameters will be ignored
+-  **_CSS color string_** : A hexadecimal ( `"#ff0000"` ), RGB ( `"rgb(255, 0, 0)"` ) or HSL ( `"hsl(0, 100, 50)"` ) color format that will determine the _hue_, _saturation_, _light_ and _alpha_ values.
+   > <details><summary>See details</summary><p>Hexadecimal color format accepts 3 (4 with alpha) or 6 (8 with alpha) hexadecimal values. </p><p>RGB format accepts <code>direct value</code> or <code>%</code>. It accepts <code>comma</code>, <code>space</code> or <code>forward slash</code> for value separator. Optional alpha value is accepted for both <code>rgb</code> and <code>rgba</code>.</p><p>HSL format accepts <code>direct value</code>, or <code>< angle ></code> value ( deg | turn | rad | grad ), for the hue value, and <code>%</code> for other values. It accepts <code>comma</code>, <code>space</code> or <code>forward slash</code> for value separator. Optional alpha value is accepted for both <code>hsl</code> and <code>hsla</code>.</p></details>
+   > All next parameters will be ignored.
 -  **_Color object_** : An other Color object can be passed, to be the reference on which this new Color will be based.
    > All next parameters become _offset_ to shift from this reference.
-   </dd></dl></dd>
-   </dl>
-   <br>
+-  **_Object_** : An object with a collection of named properties to easily set any option of the Color object in one go. See the <a href="#parameter-object-details-">parameter object details</a> section to know more.
+
+   > All next parameters will be ignored.
+
+      </dd></dl></dd>
+      </dl>
+      <br>
 
 <dl>
-<code><b>Saturation</b></code> <i>(Optional)</i>
-<dd><dl><dd>The 2<sup>nd</sup> parameter set the <i>saturation</i> value or offset :
+<code><b>Saturation / Offsets</b></code> <i>(Optional)</i>
+<dd><dl><dd>The 2<sup>nd</sup> parameter set the <i>saturation</i> value, or the offsets for a child Color :
 
--  If the 1<sup>st</sup> parameter is a _hue_ value : this one will set the _saturation_ **value** (`100` by default : Pure color).
--  If the 1<sup>st</sup> parameter is a _Color_ object : this one will set the _saturation_ **offset** (`0` by default : No offset).
--  If the 1<sup>st</sup> parameter is a _CSS color string_ : this one will be **ignored**.
+-  If the 1<sup>st</sup> parameter is a **_hue_ value** : this one have to be a `number` and will set the _saturation_ value (`100` by default : Pure color).
+-  If the 1<sup>st</sup> parameter is a **_Color_ object** : this one have to be a object that will set the offsets values (`0` by default for all offsets : No offset).<details><summary>See details</summary>The offsets object accepts 4 properties : `hue`, `saturation`, `light` and `alpha`, that will sets the offset for the corresponding color value (See <a href="#offsets-parameter-object-">offsets parameter object </a>).<br>Each is optionnal, and accept : <br>- A `number`, which will be add to the parent value to obtain the child value, <br>- Or a `callback`, which will get the parent value as parameter, and have to return a `number` to be the child value.</details>
+-  If the 1<sup>st</sup> parameter is a **_CSS color string_** or a **object** : this one will be ignored.
 </dd></dl></dd>
 </dl>
 <br>
 
 <dl>
 <code><b>Light</b></code> <i>(Optional)</i>
-<dd><dl><dd>The 3<sup>rd</sup> parameter set the <i>light</i> value or offset :
+<dd><dl><dd>The 3<sup>rd</sup> parameter set the <i>light</i> value :
 
--  If the 1<sup>st</sup> parameter is a _hue_ value : this one will set the _light_ **value** ( `50` by default: Pure color ).
--  If the 1<sup>st</sup> parameter is a _Color_ object : this one will set the _light_ **offset** ( `0` by default : No offset ).
--  If the 1<sup>st</sup> parameter is a _CSS color string_ : this one will be **ignored**.
+-  If the 1<sup>st</sup> parameter is a **_hue_ value** : this one have to be a `number` and will set the _light_ value ( `50` by default: Pure color ).
+-  For **all other case** : this one will be ignored.
 </dd></dl></dd>
 </dl>
 <br>
 
 <dl>
 <code><b>Aplha</b></code> <i>(Optional)</i>
-<dd><dl><dd>The 4<sup>th</sup> parameter set the <i>alpha</i> (transparency) value or offset :
+<dd><dl><dd>The 4<sup>th</sup> parameter set the <i>alpha</i> (transparency) value :
 
--  If the 1<sup>st</sup> parameter is a _hue_ value : this one will set the _alpha_ **value** ( `100` by default : No transparency ).
--  If the 1<sup>st</sup> parameter is a _Color_ object : this one will set the _alpha_ **offset** ( `0` by default: No offset ).
--  If the 1<sup>st</sup> parameter is a _CSS color string_ : this one will be **ignored**.
+-  If the 1<sup>st</sup> parameter is a **_hue_ value** : this one have to be a `number` and will set the _alpha_ value ( `100` by default : No transparency ).
+-  For **all other case** : this one will be ignored.
 </dd></dl></dd>
 </dl>
+
+<br>
+<h6 align="right"><a href="#top"> back to top ⇧</a></h6>
+<br>
+
+### Parameter object details :
+
+<br>
+
+##### General parameter object :
+
+If the 1<sup>st</sup> parameter is a object, all Color properties can be set in one go :
+
+-  Every properties are optionnal.
+-  If a color property is set both directly ( `{ hue }` ) and in a collection of properties object ( `{ properties: { hue } }` ), the value in the set will take priority and the direct property will be ignored.
+-  Idem for offsets.
+-  `parentColor` is a alias for `ref` to assign a parent Color. If both are put, `parentColor` will be ignored.
+
+```js
+{
+   // Color properties :
+   hue : number | <angle> string,
+   saturation: number,
+   light: number,
+   alpha: number,
+
+   // Collection of color properties :
+   properties: {
+      hue : number | <angle> string,
+      saturation: number,
+      light: number,
+      alpha: number,
+   }
+
+   // CSS color string (hexa, rgb or hsl) :
+   css: string,
+
+   // Color reference :
+   ref: Color,
+   parentColor: Color, // Alias
+
+   // Offsets :
+   hueOffset : number | (parentHue) => number,
+   saturationOffset: number | (parentSaturation) => number,
+   lightOffset: number | (parentLight) => number,
+   alphaOffset: number | (parentAlpha) => number,
+
+   // Collection of offsets :
+   Offsets: {
+      hue : number | (parentHue) => number,
+      saturation: number | (parentSaturation) => number,
+      light: number | (parentLight) => number,
+      alpha: number | (parentAlpha) => number,
+   }
+}
+```
+
+<br>
+<br>
+
+##### Offsets parameter object :
+
+If the 1<sup>st</sup> argument is a Color object to set the parent reference, the 2<sup>nd</sup> argument is a object of offsets :
+
+```js
+{
+   // Offsets :
+   hue : number | (parentHue) => number,
+   saturation: number | (parentSaturation) => number,
+   light: number | (parentLight) => number,
+   alpha: number | (parentAlpha) => number,
+}
+```
 
 <br>
 <h6 align="right"><a href="#top"> back to top ⇧</a></h6>
@@ -466,7 +571,7 @@ This value will be fixed, independent of the reference value.
    -  If <code>Color</code> is a child with no own hue value:
       <code>hue</code> will return the value of the parent with the offset applied.
    -  Default value : `0` (red).
--  Setter <code>Color.hue = number</code> :
+-  Setter <code>Color.hue = number | css \<angle\> string</code> :
    -  If `null` or `undefined`, assignment will be ignored.
    -  No need to format the number between 0 and 360, it will still work outside the usual position.
       > For exemple `-120` will have the same result as `240` (-120 + 360 = 240 : same position on the wheel).
