@@ -134,3 +134,132 @@ describe("export to RGB CSS color String", () => {
 		expect(color.toRgb()).toBe(rgb);
 	});
 });
+
+// test Color.setColorProperties() :
+const props = ["hue", "saturation", "light", "alpha"];
+describe("change mutiple color Properties", () => {
+	const baseTestValue = 10;
+	const baseTestProperties = {
+		hue: baseTestValue,
+		saturation: baseTestValue,
+		light: baseTestValue,
+		alpha: baseTestValue,
+	};
+
+	const propertiesValues = [
+		[undefined, baseTestProperties],
+		[{}, baseTestProperties],
+		[{ hue: 20 }, { ...baseTestProperties, hue: 20 }],
+		[{ saturation: 20 }, { ...baseTestProperties, saturation: 20 }],
+		[{ light: 20 }, { ...baseTestProperties, light: 20 }],
+		[{ alpha: 20 }, { ...baseTestProperties, alpha: 20 }],
+		[
+			{ hue: 20, saturation: 20 },
+			{ ...baseTestProperties, hue: 20, saturation: 20 },
+		],
+		[
+			{ hue: 20, light: 20 },
+			{ ...baseTestProperties, hue: 20, light: 20 },
+		],
+		[
+			{ alpha: 20, light: 20 },
+			{ ...baseTestProperties, alpha: 20, light: 20 },
+		],
+		[
+			{ hue: 20, saturation: 20, light: 20 },
+			{ ...baseTestProperties, hue: 20, saturation: 20, light: 20 },
+		],
+		[
+			{ alpha: 20, saturation: 20, light: 20 },
+			{ ...baseTestProperties, alpha: 20, saturation: 20, light: 20 },
+		],
+		[
+			{ hue: 20, saturation: 20, light: 20, alpha: 20 },
+			{ hue: 20, saturation: 20, light: 20, alpha: 20 },
+		],
+	];
+	describe.each(propertiesValues)("with %s", (properties, expected) => {
+		const color = new Color(baseTestProperties);
+		color.setColorProperties(properties);
+
+		test.each(props)(`expect %s to be as ${JSON.stringify(expected)}`, prop => {
+			expect(color[prop]).toBe(expected[prop]);
+		});
+	});
+
+	describe("extra props shoud be ignored", () => {
+		const color = new Color(baseTestProperties);
+		color.setColorProperties({ extra: "value" });
+		test.each(props)(`expect %s to be ${baseTestValue}`, prop => {
+			expect(color[prop]).toBe(baseTestValue);
+		});
+	});
+});
+
+// test Color.setColorOffsets() :
+const offsets = [
+	["hueOffset", "hue"],
+	["saturationOffset", "saturation"],
+	["lightOffset", "light"],
+	["alphaOffset", "alpha"],
+];
+describe("change mutiple color Offsets", () => {
+	const baseTestValue = 10;
+	const baseTestOffsets = {
+		hue: baseTestValue,
+		saturation: baseTestValue,
+		light: baseTestValue,
+		alpha: baseTestValue,
+	};
+
+	const offsetValues = [
+		[undefined, baseTestOffsets],
+		[{}, baseTestOffsets],
+		[{ hue: 20 }, { ...baseTestOffsets, hue: 20 }],
+		[{ saturation: 20 }, { ...baseTestOffsets, saturation: 20 }],
+		[{ light: 20 }, { ...baseTestOffsets, light: 20 }],
+		[{ alpha: 20 }, { ...baseTestOffsets, alpha: 20 }],
+		[
+			{ hue: 20, saturation: 20 },
+			{ ...baseTestOffsets, hue: 20, saturation: 20 },
+		],
+		[
+			{ hue: 20, light: 20 },
+			{ ...baseTestOffsets, hue: 20, light: 20 },
+		],
+		[
+			{ alpha: 20, light: 20 },
+			{ ...baseTestOffsets, alpha: 20, light: 20 },
+		],
+		[
+			{ hue: 20, saturation: 20, light: 20 },
+			{ ...baseTestOffsets, hue: 20, saturation: 20, light: 20 },
+		],
+		[
+			{ alpha: 20, saturation: 20, light: 20 },
+			{ ...baseTestOffsets, alpha: 20, saturation: 20, light: 20 },
+		],
+		[
+			{ hue: 20, saturation: 20, light: 20, alpha: 20 },
+			{ hue: 20, saturation: 20, light: 20, alpha: 20 },
+		],
+	];
+	describe.each(offsetValues)("with %s", (offsetsValue, expected) => {
+		const parent = new Color();
+		const color = new Color(parent, baseTestOffsets);
+		color.setColorOffsets(offsetsValue);
+
+		test.each(offsets)(`expect %s to be as ${JSON.stringify(expected)}`, (offset, property) => {
+			expect(color[offset]).toBe(expected[property]);
+		});
+	});
+
+	describe("extra offsets shoud be ignored", () => {
+		const parent = new Color();
+		const color = new Color(parent, baseTestOffsets);
+		color.setColorOffsets({ extra: "value" });
+		test.each(offsets)(`expect %s to be ${baseTestValue}`, (offset, property) => {
+			expect(color[offset]).toBe(baseTestValue);
+		});
+	});
+});
