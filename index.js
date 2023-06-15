@@ -73,12 +73,14 @@ class Color {
 		// If we get direct number value :
 		if (color instanceof Number || typeof color === "number" || color === null) {
 			checkTypes.directValueArgument(arguments);
-			this.setColorProperties({ hue: color, saturation, light, alpha });
+			this.setColorProperties(getPropOrDefault({ hue: color, saturation, light, alpha }));
 
 			// If we get a <angle> string for hue value ("180deg", "0.5turn"):
 		} else if (isValidHueString(color)) {
 			checkTypes.directValueArgument(arguments);
-			this.setColorProperties({ hue: getValueFromHueString(color), saturation, light, alpha });
+			this.setColorProperties(
+				getPropOrDefault({ hue: getValueFromHueString(color), saturation, light, alpha })
+			);
 
 			// If we get a CSS color string :
 		} else if (color instanceof String || typeof color === "string") {
@@ -228,18 +230,18 @@ class Color {
 	}
 
 	// Set all properties at once :
-	setColorProperties(properties = defaultValues.properties) {
-		this.#hue = getFormatedHue(properties.hue ?? defaultValues.properties.hue);
-		this.#saturation = getFormatedValue(properties.saturation ?? defaultValues.properties.saturation);
-		this.#light = getFormatedValue(properties.light ?? defaultValues.properties.light);
-		this.#alpha = getFormatedValue(properties.alpha ?? defaultValues.properties.alpha);
+	setColorProperties(properties = {}) {
+		if (isValue(properties.hue)) this.#hue = getFormatedHue(properties.hue);
+		if (isValue(properties.saturation)) this.#saturation = getFormatedValue(properties.saturation);
+		if (isValue(properties.light)) this.#light = getFormatedValue(properties.light);
+		if (isValue(properties.alpha)) this.#alpha = getFormatedValue(properties.alpha);
 	}
 
-	setColorOffsets(offsets = defaultValues.offsets) {
-		this.#offsets.hue = offsets.hue ?? defaultValues.offsets.hue;
-		this.#offsets.saturation = offsets.saturation ?? defaultValues.offsets.saturation;
-		this.#offsets.light = offsets.light ?? defaultValues.offsets.light;
-		this.#offsets.alpha = offsets.alpha ?? defaultValues.offsets.alpha;
+	setColorOffsets(offsets = {}) {
+		if (isValue(offsets.hue)) this.#offsets.hue = offsets.hue;
+		if (isValue(offsets.saturation)) this.#offsets.saturation = offsets.saturation;
+		if (isValue(offsets.light)) this.#offsets.light = offsets.light;
+		if (isValue(offsets.alpha)) this.#offsets.alpha = offsets.alpha;
 	}
 }
 
@@ -268,6 +270,13 @@ const getFormatedValue = (value, max = 100) => {
 	value = roundAt1Decimal(value);
 	return value > max ? max : value <= 0 ? 0 : value;
 };
+
+const getPropOrDefault = properties => ({
+	hue: properties.hue ?? defaultValues.properties.hue,
+	saturation: properties.saturation ?? defaultValues.properties.saturation,
+	light: properties.light ?? defaultValues.properties.light,
+	alpha: properties.alpha ?? defaultValues.properties.alpha,
+});
 
 /**
  * Converts an RGB color value to HSL.
@@ -380,7 +389,11 @@ const handleNamedProperties = props => {
 	// Parent Color object as ref :
 	if (isValue(props.ref) || isValue(props.parentColor)) {
 		ref = checkTypes.parentColor(props.ref, Color) ?? checkTypes.parentColor(props.parentColor, Color);
-	} else if (properties === null) properties = defaultValues.properties; // if no ref and no properties : default values
+	} else {
+		// if no ref : default values for missing properties
+		for (const prop in properties) if (!isValue(properties[prop])) delete properties[prop];
+		properties = { ...defaultValues.properties, ...properties };
+	}
 
 	// Color offsets from the parent Color object :
 	const hue = props.hueOffset;
