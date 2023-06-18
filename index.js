@@ -29,7 +29,6 @@
 	- feat : set limits to color variation
 	- feat : add a remove method to reset fixed properties
 	- doc : add useful exemple in the README section 
-	- feat : add .parent with .ref alias to get parent color
 	- feat : allowing the remplacement of all color properties through a new color property, 
 				who act like the contructor function, accepting the same arguments, with value, css color strings and Color object
 	- feat : switch to TS !
@@ -203,6 +202,29 @@ class Color {
 	/*
 
 
+	/*********************/
+	/***  Color ref :  ***/
+	/*********************/
+
+	// Ref is parent Color
+	get ref() {
+		return this.#colorReference;
+	}
+	set ref(ref) {
+		if (checkTypes.parentColor(ref, Color)) this.#colorReference = ref;
+	}
+
+	// ref alias :
+	get parent() {
+		return this.#colorReference;
+	}
+	set parent(ref) {
+		if (checkTypes.parentColor(ref, Color)) this.#colorReference = ref;
+	}
+
+	/*
+
+
 	/*******************/
 	/***  Methods :  ***/
 	/*******************/
@@ -246,6 +268,17 @@ class Color {
 }
 
 export default Color;
+/*
+
+
+
+
+
+/***********************/
+/***  Constructor :  ***/
+/***********************/
+
+function handleConstructor(color, saturation, light, alpha) {}
 /*
 
 
