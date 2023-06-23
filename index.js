@@ -228,6 +228,7 @@ class Color {
 	}
 
 	setColorProperties(properties = {}) {
+		checkTypes.propsSetObject(properties, "properties");
 		if (isValue(properties.hue) && checkTypes.property("hue", properties.hue))
 			this.#hue = getFormatedHue(properties.hue);
 		if (isValue(properties.saturation) && checkTypes.property("saturation", properties.saturation))
@@ -239,6 +240,7 @@ class Color {
 	}
 
 	setColorOffsets(offsets = {}) {
+		checkTypes.propsSetObject(offsets, "offsets");
 		["hue", "saturation", "light", "alpha"].forEach(property => {
 			if (isValue(offsets[property]) && checkTypes.offset(property, offsets[property]))
 				this.#offsets[property] = offsets[property];
