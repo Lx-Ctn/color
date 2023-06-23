@@ -63,44 +63,9 @@ class Color {
 	#alpha;
 	#offsets = { ...defaultValues.offsets };
 
-	constructor(
-		color = defaultValues.properties.hue,
-		saturation = defaultValues.properties.saturation,
-		light = defaultValues.properties.light,
-		alpha = defaultValues.properties.alpha
-	) {
-		// If we get direct number value :
-		if (color instanceof Number || typeof color === "number" || color === null) {
-			checkTypes.directValueArgument(arguments);
-			this.setColorProperties(getPropOrDefault({ hue: color, saturation, light, alpha }));
-
-			// If we get a <angle> string for hue value ("180deg", "0.5turn"):
-		} else if (isValidHueString(color)) {
-			checkTypes.directValueArgument(arguments);
-			this.setColorProperties(
-				getPropOrDefault({ hue: getValueFromHueString(color), saturation, light, alpha })
-			);
-
-			// If we get a CSS color string :
-		} else if (color instanceof String || typeof color === "string") {
-			const hslValues = handleCssColorStrings(color);
-			this.setColorProperties(hslValues);
-
-			// If we get a Color object :
-		} else if (color instanceof Color) {
-			this.#colorReference = color;
-			const offsets = arguments[1];
-			checkTypes.offsetObjectArgument(offsets) && this.setColorOffsets(offsets);
-
-			// If we get a object with named properties :
-		} else if (checkTypes.isLiteralObject(color)) {
-			const constructor = handleNamedProperties(color);
-			this.#colorReference = constructor.ref;
-			constructor.properties && this.setColorProperties(constructor.properties);
-			constructor.offsets && this.setColorOffsets(constructor.offsets);
-
-			//
-		} else throw new TypeError(getErrorMessage.directValues("main", color, true));
+	constructor(color, saturation, light, alpha) {
+		const getDefaultValuesIfUndefined = true;
+		handleConstructor.apply(this, [color, saturation, light, alpha, getDefaultValuesIfUndefined]);
 	}
 
 	#getValueFromOffset(value) {
@@ -252,18 +217,32 @@ class Color {
 	}
 
 	// Set all properties at once :
+	set(color, saturation, light, alpha) {
+		const getDefaultValuesIfUndefined = false;
+		handleConstructor.apply(this, [color, saturation, light, alpha, getDefaultValuesIfUndefined]);
+	}
+
+	reset(color, saturation, light, alpha) {
+		const getDefaultValuesIfUndefined = true;
+		handleConstructor.apply(this, [color, saturation, light, alpha, getDefaultValuesIfUndefined]);
+	}
+
 	setColorProperties(properties = {}) {
-		if (isValue(properties.hue)) this.#hue = getFormatedHue(properties.hue);
-		if (isValue(properties.saturation)) this.#saturation = getFormatedValue(properties.saturation);
-		if (isValue(properties.light)) this.#light = getFormatedValue(properties.light);
-		if (isValue(properties.alpha)) this.#alpha = getFormatedValue(properties.alpha);
+		if (isValue(properties.hue) && checkTypes.property("hue", properties.hue))
+			this.#hue = getFormatedHue(properties.hue);
+		if (isValue(properties.saturation) && checkTypes.property("saturation", properties.saturation))
+			this.#saturation = getFormatedValue(properties.saturation);
+		if (isValue(properties.light) && checkTypes.property("light", properties.light))
+			this.#light = getFormatedValue(properties.light);
+		if (isValue(properties.alpha) && checkTypes.property("alpha", properties.alpha))
+			this.#alpha = getFormatedValue(properties.alpha);
 	}
 
 	setColorOffsets(offsets = {}) {
-		if (isValue(offsets.hue)) this.#offsets.hue = offsets.hue;
-		if (isValue(offsets.saturation)) this.#offsets.saturation = offsets.saturation;
-		if (isValue(offsets.light)) this.#offsets.light = offsets.light;
-		if (isValue(offsets.alpha)) this.#offsets.alpha = offsets.alpha;
+		["hue", "saturation", "light", "alpha"].forEach(property => {
+			if (isValue(offsets[property]) && checkTypes.offset(property, offsets[property]))
+				this.#offsets[property] = offsets[property];
+		});
 	}
 }
 
@@ -278,7 +257,56 @@ export default Color;
 /***  Constructor :  ***/
 /***********************/
 
-function handleConstructor(color, saturation, light, alpha) {}
+function handleConstructor(color, saturation, light, alpha, getDefaultValuesIfUndefined) {
+	// if called in constructor, we want the default value to fill the missing value,
+	// but if called in .set() method, we want to keep previous value if not re-defined.
+	if (getDefaultValuesIfUndefined) {
+		color ??= defaultValues.properties.hue;
+		saturation ??= defaultValues.properties.saturation;
+		light ??= defaultValues.properties.light;
+		alpha ??= defaultValues.properties.alpha;
+	}
+
+	// If we get direct number value :
+	if (color instanceof Number || typeof color === "number" || color === null || color === undefined) {
+		checkTypes.directValueArgument(arguments);
+		let properties = { hue: color, saturation, light, alpha };
+		properties = getDefaultValuesIfUndefined ? getPropOrDefault(properties) : properties;
+		this.setColorProperties(properties);
+
+		// If we get a <angle> string for hue value ("180deg", "0.5turn"):
+	} else if (isValidHueString(color)) {
+		checkTypes.directValueArgument(arguments);
+		let properties = { hue: getValueFromHueString(color), saturation, light, alpha };
+		properties = getDefaultValuesIfUndefined ? getPropOrDefault(properties) : properties;
+		this.setColorProperties(properties);
+
+		// If we get a CSS color string :
+	} else if (color instanceof String || typeof color === "string") {
+		const hslValues = handleCssColorStrings(color);
+		this.setColorProperties(hslValues);
+
+		// If we get a Color object :
+	} else if (color instanceof Color) {
+		this.ref = color;
+		const offsets = arguments[1];
+		checkTypes.offsetObjectArgument(offsets) && this.setColorOffsets(offsets);
+
+		// If we get a object with named properties :
+	} else if (checkTypes.isLiteralObject(color)) {
+		let { ref, properties, offsets } = handleNamedProperties(color);
+		if (ref) this.ref = ref;
+		else if (getDefaultValuesIfUndefined) {
+			// if no ref : default values for missing properties
+			for (const prop in properties) if (!isValue(properties[prop])) delete properties[prop];
+			properties = { ...defaultValues.properties, ...properties };
+		}
+		properties && this.setColorProperties(properties);
+		offsets && this.setColorOffsets(offsets);
+
+		//
+	} else throw new TypeError(getErrorMessage.directValues("main", color, true));
+}
 /*
 
 
@@ -422,10 +450,6 @@ const handleNamedProperties = props => {
 	// Parent Color object as ref :
 	if (isValue(props.ref) || isValue(props.parentColor)) {
 		ref = checkTypes.parentColor(props.ref, Color) ?? checkTypes.parentColor(props.parentColor, Color);
-	} else {
-		// if no ref : default values for missing properties
-		for (const prop in properties) if (!isValue(properties[prop])) delete properties[prop];
-		properties = { ...defaultValues.properties, ...properties };
 	}
 
 	// Color offsets from the parent Color object :
