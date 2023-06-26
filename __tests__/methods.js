@@ -1,4 +1,5 @@
 import Color from "..";
+import { offset } from "../src/checkTypes";
 /**********************/
 /**  Test Methods :  **/
 /**********************/
@@ -135,8 +136,8 @@ describe("export to RGB CSS color String", () => {
 	});
 });
 
-// test Color.setColorProperties() :
-const props = ["hue", "saturation", "light", "alpha"];
+// Test Color.setColorProperties() :
+const colorProps = ["hue", "saturation", "light", "alpha"];
 describe("change mutiple color Properties", () => {
 	const baseTestValue = 10;
 	const baseTestProperties = {
@@ -182,21 +183,21 @@ describe("change mutiple color Properties", () => {
 		const color = new Color(baseTestProperties);
 		color.setColorProperties(properties);
 
-		test.each(props)(`expect %s to be as ${JSON.stringify(expected)}`, prop => {
+		test.each(colorProps)(`expect %s to be as ${JSON.stringify(expected)}`, prop => {
 			expect(color[prop]).toBe(expected[prop]);
 		});
 	});
 
-	describe("extra props shoud be ignored", () => {
+	describe("extra colorProps shoud be ignored", () => {
 		const color = new Color(baseTestProperties);
 		color.setColorProperties({ extra: "value" });
-		test.each(props)(`expect %s to be ${baseTestValue}`, prop => {
+		test.each(colorProps)(`expect %s to be ${baseTestValue}`, prop => {
 			expect(color[prop]).toBe(baseTestValue);
 		});
 	});
 });
 
-// test Color.setColorOffsets() :
+// Test Color.setColorOffsets() :
 const offsets = [
 	["hueOffset", "hue"],
 	["saturationOffset", "saturation"],
@@ -260,6 +261,161 @@ describe("change mutiple color Offsets", () => {
 		color.setColorOffsets({ extra: "value" });
 		test.each(offsets)(`expect %s to be ${baseTestValue}`, (offset, property) => {
 			expect(color[offset]).toBe(baseTestValue);
+		});
+	});
+});
+
+// Test Color.set() :
+const allprops = [
+	"hue",
+	"saturation",
+	"light",
+	"alpha",
+	"hueOffset",
+	"saturationOffset",
+	"lightOffset",
+	"alphaOffset",
+];
+describe("if .set() method", () => {
+	const parentColor = new Color();
+	const originalValue = 10;
+	const colorConstructor = {
+		properties: { hue: originalValue, saturation: originalValue, light: originalValue, alpha: originalValue },
+		offsets: { hue: originalValue, saturation: originalValue, light: originalValue, alpha: originalValue },
+		ref: parentColor,
+	};
+
+	// properties & offsets :
+	test.each(allprops)("is empty, %s should not change", prop => {
+		const testColor = new Color(colorConstructor);
+		testColor.set();
+		expect(testColor[prop]).toBe(originalValue);
+	});
+	describe.each(allprops)("provide %s :", providedProp => {
+		const newValue = 7;
+		const testColor = new Color(colorConstructor);
+		testColor.set({ [providedProp]: newValue });
+
+		test(`${providedProp} should be as provided`, () => {
+			expect(testColor[providedProp]).toBe(newValue);
+		});
+		test.each(allprops)("%s should not change", otherProp => {
+			if (otherProp !== providedProp) expect(testColor[otherProp]).toBe(originalValue);
+		});
+	});
+
+	// ref :
+	test("is empty, .ref should not change", () => {
+		const testColor = new Color(colorConstructor);
+		testColor.set();
+		expect(testColor.ref).toBe(parentColor);
+	});
+	describe("provide only a ref value :", () => {
+		const newParent = new Color();
+
+		test(".ref should be the ref", () => {
+			const testColor = new Color(colorConstructor);
+			testColor.set({ ref: newParent });
+			expect(testColor.ref).toBe(newParent);
+		});
+		test.each(allprops)("%s should not change", prop => {
+			const testColor = new Color(colorConstructor);
+			testColor.set({ ref: newParent });
+			expect(testColor[prop]).toBe(originalValue);
+		});
+	});
+
+	// css :
+	describe("provide a css string value without a color property value :", () => {
+		const cssString = "hsl(23, 23%, 23%, 23%)";
+		const expectedValue = 23;
+		test.each(colorProps)("%s should change to new value", prop => {
+			const testColor = new Color(colorConstructor);
+			testColor.set({ css: cssString });
+			expect(testColor[prop]).toBe(expectedValue);
+		});
+		test.each(offsets)("%s should not change", offset => {
+			const testColor = new Color(colorConstructor);
+			testColor.set({ css: cssString });
+			expect(testColor[offset]).toBe(originalValue);
+		});
+	});
+});
+
+// Test Color.reset() :
+
+describe("If .reset() method", () => {
+	const defaultValues = {
+		hue: 0,
+		saturation: 100,
+		light: 50,
+		alpha: 100,
+		hueOffset: 0,
+		saturationOffset: 0,
+		lightOffset: 0,
+		alphaOffset: 0,
+	};
+	const parentColor = new Color();
+	const originalValue = 10;
+	const colorConstructor = {
+		properties: { hue: originalValue, saturation: originalValue, light: originalValue, alpha: originalValue },
+		offsets: { hue: originalValue, saturation: originalValue, light: originalValue, alpha: originalValue },
+		ref: parentColor,
+	};
+
+	// properties & offsets :
+	test.each(allprops)("is empty, %s should reset to default value", prop => {
+		const testColor = new Color(colorConstructor);
+		testColor.reset();
+		expect(testColor[prop]).toBe(defaultValues[prop]);
+	});
+	describe.each(allprops)("provide %s :", providedProp => {
+		const newValue = 7;
+		const testColor = new Color(colorConstructor);
+		testColor.reset({ [providedProp]: newValue });
+
+		test(`${providedProp} should be as provided`, () => {
+			expect(testColor[providedProp]).toBe(newValue);
+		});
+		test.each(allprops)("%s should reset to default value", otherProp => {
+			if (otherProp !== providedProp) expect(testColor[otherProp]).toBe(defaultValues[otherProp]);
+		});
+	});
+
+	// ref :
+	test("is empty, .ref should not change", () => {
+		const testColor = new Color(colorConstructor);
+		testColor.reset();
+		expect(testColor.ref).toBe(parentColor);
+	});
+	describe("provide only a ref value :", () => {
+		const newParent = new Color();
+
+		test(".ref should be the ref", () => {
+			const testColor = new Color(colorConstructor);
+			testColor.reset({ ref: newParent });
+			expect(testColor.ref).toBe(newParent);
+		});
+		test.each(allprops)("%s should reset to default value", prop => {
+			const testColor = new Color(colorConstructor);
+			testColor.reset({ ref: newParent });
+			expect(testColor[prop]).toBe(defaultValues[prop]);
+		});
+	});
+
+	// css :
+	describe("provide a css string value without a color property value :", () => {
+		const cssString = "hsl(23, 23%, 23%, 23%)";
+		const expectedValue = 23;
+		test.each(colorProps)("%s should change to new value", prop => {
+			const testColor = new Color(colorConstructor);
+			testColor.reset({ css: cssString });
+			expect(testColor[prop]).toBe(expectedValue);
+		});
+		test.each(offsets)("%s should reset to default value", offset => {
+			const testColor = new Color(colorConstructor);
+			testColor.reset({ css: cssString });
+			expect(testColor[offset]).toBe(defaultValues[offset]);
 		});
 	});
 });

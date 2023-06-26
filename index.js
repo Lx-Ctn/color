@@ -27,10 +27,8 @@
 	- feat : method that export the status of the color (values, offset, hasReference) for debbug reason
 	- feat : easy dark/light theme integration ?
 	- feat : set limits to color variation
-	- feat : add a remove method to reset fixed properties
+	- feat : add a remove method to reset fixed properties : should get to default value if no ref
 	- doc : add useful exemple in the README section 
-	- feat : allowing the remplacement of all color properties through a new color property, 
-				who act like the contructor function, accepting the same arguments, with value, css color strings and Color object
 	- feat : switch to TS !
 	*/
 
@@ -223,26 +221,27 @@ class Color {
 	}
 
 	reset(color, saturation, light, alpha) {
+		this.#hue = this.#saturation = this.#light = this.#alpha = null;
 		const getDefaultValuesIfUndefined = true;
 		handleConstructor.apply(this, [color, saturation, light, alpha, getDefaultValuesIfUndefined]);
 	}
 
 	setColorProperties(properties = {}) {
 		checkTypes.propsSetObject(properties, "properties");
-		if (isValue(properties.hue) && checkTypes.property("hue", properties.hue))
+		if (isValue(properties?.hue) && checkTypes.property("hue", properties.hue))
 			this.#hue = getFormatedHue(properties.hue);
-		if (isValue(properties.saturation) && checkTypes.property("saturation", properties.saturation))
+		if (isValue(properties?.saturation) && checkTypes.property("saturation", properties.saturation))
 			this.#saturation = getFormatedValue(properties.saturation);
-		if (isValue(properties.light) && checkTypes.property("light", properties.light))
+		if (isValue(properties?.light) && checkTypes.property("light", properties.light))
 			this.#light = getFormatedValue(properties.light);
-		if (isValue(properties.alpha) && checkTypes.property("alpha", properties.alpha))
+		if (isValue(properties?.alpha) && checkTypes.property("alpha", properties.alpha))
 			this.#alpha = getFormatedValue(properties.alpha);
 	}
 
 	setColorOffsets(offsets = {}) {
 		checkTypes.propsSetObject(offsets, "offsets");
 		["hue", "saturation", "light", "alpha"].forEach(property => {
-			if (isValue(offsets[property]) && checkTypes.offset(property, offsets[property]))
+			if (isValue(offsets?.[property]) && checkTypes.offset(property, offsets[property]))
 				this.#offsets[property] = offsets[property];
 		});
 	}
@@ -267,20 +266,21 @@ function handleConstructor(color, saturation, light, alpha, getDefaultValuesIfUn
 		saturation ??= defaultValues.properties.saturation;
 		light ??= defaultValues.properties.light;
 		alpha ??= defaultValues.properties.alpha;
+		this.setColorOffsets(defaultValues.offsets);
 	}
 
 	// If we get direct number value :
 	if (color instanceof Number || typeof color === "number" || color === null || color === undefined) {
 		checkTypes.directValueArgument(arguments);
 		let properties = { hue: color, saturation, light, alpha };
-		properties = getDefaultValuesIfUndefined ? getPropOrDefault(properties) : properties;
+		if (getDefaultValuesIfUndefined) properties = getPropOrDefault(properties);
 		this.setColorProperties(properties);
 
 		// If we get a <angle> string for hue value ("180deg", "0.5turn"):
 	} else if (isValidHueString(color)) {
 		checkTypes.directValueArgument(arguments);
 		let properties = { hue: getValueFromHueString(color), saturation, light, alpha };
-		properties = getDefaultValuesIfUndefined ? getPropOrDefault(properties) : properties;
+		if (getDefaultValuesIfUndefined) properties = getPropOrDefault(properties);
 		this.setColorProperties(properties);
 
 		// If we get a CSS color string :
@@ -300,8 +300,7 @@ function handleConstructor(color, saturation, light, alpha, getDefaultValuesIfUn
 		if (ref) this.ref = ref;
 		else if (getDefaultValuesIfUndefined) {
 			// if no ref : default values for missing properties
-			for (const prop in properties) if (!isValue(properties[prop])) delete properties[prop];
-			properties = { ...defaultValues.properties, ...properties };
+			properties = getPropOrDefault(properties);
 		}
 		properties && this.setColorProperties(properties);
 		offsets && this.setColorOffsets(offsets);
@@ -334,12 +333,10 @@ const getFormatedValue = (value, max = 100) => {
 	return value > max ? max : value <= 0 ? 0 : value;
 };
 
-const getPropOrDefault = properties => ({
-	hue: properties.hue ?? defaultValues.properties.hue,
-	saturation: properties.saturation ?? defaultValues.properties.saturation,
-	light: properties.light ?? defaultValues.properties.light,
-	alpha: properties.alpha ?? defaultValues.properties.alpha,
-});
+const getPropOrDefault = properties => {
+	for (const prop in properties) if (!isValue(properties[prop])) delete properties[prop];
+	return { ...defaultValues.properties, ...properties };
+};
 
 /**
  * Converts an RGB color value to HSL.

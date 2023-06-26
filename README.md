@@ -838,7 +838,7 @@ color.set("#ff0000"); // The offsets will remain unchanged.
 <dl>
 <dt><code>.reset()</code></dt>
 <dd><dl><dd>Act like a <code>new Color()</code> constructor to update a Color with new values without breaking the reference for the child Color like <code>new Color()</code> would.<br>
-Every missing property in the <code>.reset()</code> method will be reset to the default value.</dd></dl></dd>
+Every missing property in the <code>.reset()</code> method will be reset to the default value, <b>except the <code>ref</code> ( parent Color ) wich can only be replace by a other <code>Color</code> or remain</b>.</dd></dl></dd>
 </dl>
 
 ```js
@@ -847,7 +847,7 @@ const color = new Color({
 	offsets: { saturation: sat => sat / 2 },
 });
 
-color.reset(); // Back to default values, no offsets, no parent refs.
+color.reset(); // Back to default values, no offsets.
 // hue property will be 123 :
 color.reset({ hue: 123 }); // All other set to default values.
 // All color properties will be set from the CSS string :

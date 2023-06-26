@@ -144,7 +144,28 @@ describe.each(["hue", "saturation", "light", "alpha"])("TypeError For the %s col
 		}
 	);
 
-	// Color property setter (Color.hue) accept only a number.
+	// In the "properties" collection of the .setColorProperties() method :
+	test.each(wrongPropertyTypes)(
+		`if the ${property} property is %s in the .setColorProperties() method, a TypeError should be thrown`,
+		wrongPropertyType => {
+			const properties = { [property]: wrongPropertyType };
+			const color = new Color();
+			const setProp = () => color.setColorProperties(properties);
+
+			expect(setProp).toThrow(new TypeError(getErrorMessage.directValues(property, wrongPropertyType)));
+		}
+	);
+	test.each(expectedPropertyTypes)(
+		`if the ${property} property is %s in the .setColorProperties() method, no error should be thrown`,
+		expectedPropertyType => {
+			const properties = { [property]: expectedPropertyType };
+			const color = new Color();
+			const setProp = () => color.setColorProperties(properties);
+			expect(setProp).not.toThrow();
+		}
+	);
+
+	// Color property setter accept only a number.
 	test.each(wrongPropertyTypes)(
 		`if the ${property} property setter is %s, a TypeError should be thrown`,
 		wrongPropertyType => {
@@ -237,6 +258,30 @@ describe.each([
 		}
 	);
 
+	// In the "offsets" collection of the .setColorOffsets() method :
+	test.each(wrongPropertyTypes)(
+		`if the ${property} offset property in the .setColorOffsets() method is %s, a TypeError should be thrown`,
+		wrongPropertyType => {
+			const parent = new Color();
+			const child = new Color(parent);
+			const offsets = { [property]: wrongPropertyType };
+
+			const setOffset = () => child.setColorOffsets(offsets);
+			expect(setOffset).toThrow(new TypeError(getErrorMessage.offset(property, wrongPropertyType)));
+		}
+	);
+	test.each(rightPropertyTypes)(
+		`if the ${property} offset property in the .setColorOffsets() method is %s, no error should be thrown`,
+		rightPropertyType => {
+			const parent = new Color();
+			const child = new Color(parent);
+			const offsets = { [property]: rightPropertyType };
+
+			const setOffset = () => child.setColorOffsets(offsets);
+			expect(setOffset).not.toThrow();
+		}
+	);
+
 	// Offset property setter (Color.hue) accept only a number or a callback.
 	test.each(wrongPropertyTypes)(
 		`if the ${offset} property setter is %s, a TypeError should be thrown`,
@@ -323,5 +368,43 @@ describe("In main object argument :", () => {
 			const setProp = () => new Color({ [collection]: expectedType });
 			expect(setProp).not.toThrow();
 		});
+	});
+});
+/*
+
+
+
+*/ // .setColorProperties method  :
+describe("In .setColorProperties() method : if argument is", () => {
+	const expectedSetTypes = [{}, null, undefined];
+	const wrongSetTypes = [100, NaN, true, false, "toto", [], () => {}];
+	test.each(wrongSetTypes)("%s, a TypeError should be thrown", wrongType => {
+		const color = new Color();
+		const setProp = () => color.setColorProperties(wrongType);
+		expect(setProp).toThrow(new TypeError(getErrorMessage.object.set(wrongType, "properties")));
+	});
+	test.each(expectedSetTypes)("%s, no errors should be thrown", expectedType => {
+		const color = new Color();
+		const setProp = () => color.setColorProperties(expectedType);
+		expect(setProp).not.toThrow();
+	});
+});
+/*
+
+
+
+*/ // .setColorOffsets method :
+describe("In .setColorOffsets() method : if argument is", () => {
+	const expectedSetTypes = [{}, null, undefined];
+	const wrongSetTypes = [100, NaN, true, false, "toto", [], () => {}];
+	test.each(wrongSetTypes)("%s, a TypeError should be thrown", wrongType => {
+		const color = new Color();
+		const setProp = () => color.setColorOffsets(wrongType);
+		expect(setProp).toThrow(new TypeError(getErrorMessage.object.set(wrongType, "offsets")));
+	});
+	test.each(expectedSetTypes)("%s, no errors should be thrown", expectedType => {
+		const color = new Color();
+		const setProp = () => color.setColorOffsets(expectedType);
+		expect(setProp).not.toThrow();
 	});
 });
