@@ -1,5 +1,5 @@
 <h1 align="center" id="top">Color</h1>
-<p align="center">A color library to easily handle color variations to create dynamic color theme or complexe color animations for the web.</p>
+<p align="center">A javascript color library to easily handle color variations to create dynamic color theme, to offer custom colors to your users.</p>
 
 ---
 
@@ -52,12 +52,12 @@ That allows you to create a dynamic color theme through a set of linked `Color` 
 A simple HSL model :
 
 ```js
-const {hue, saturation, light} = {360, 90, 70} // A soft red
+const {hue, saturation, light, alpha} = {360, 90, 70, 100} // A soft red
 
 // Named properties :
-const mainColor = new Color({hue, saturation, light});
+const mainColor = new Color({hue, saturation, light, alpha});
 // Or direct values :
-const mainColor = new Color(hue, saturation, light);
+const mainColor = new Color(hue, saturation, light, alpha);
 ```
 
 <br>
@@ -90,6 +90,27 @@ const offsets = {
 const shadowColor = new Color(mainColor, alpha);
 // Callback give access to the reference property value
 shadowColor.toHsl(); // "hsla(30, 45%, 30%, 70%)"
+```
+
+<br>
+
+Use the .set() method to update a parent color with a color input value :
+
+```js
+// 1 : Offer custom colors to your users :
+const colorInput = document.querySelector("input[type='color']");
+
+colorInput.addEventListener("change", event => {
+	const userColor = event.currentTarget.value;
+
+	// 2 : Color accept CSS color string to initialize directly from inputs :
+	mainColor.set(userColor); // Update your main color with .set()
+
+	// 3 : Update your CSS with the new values :
+	document.body.style.setProperty("--main-color", mainColor.toHsl());
+	document.body.style.setProperty("--secondary-color", secondaryColor.toHsl());
+	document.body.style.setProperty("--background-color", backgroundColor.toHsl());
+});
 ```
 
 <br>
@@ -560,6 +581,11 @@ If the 1<sup>st</sup> argument is a Color object to set the parent reference, th
 ### Properties :
 
 <br>
+<br>
+
+##### Color properties :
+
+<br>
 
 <dl>
 <code><b>Color.hue</b></code>
@@ -628,7 +654,11 @@ If the 1<sup>st</sup> argument is a Color object to set the parent reference, th
    -  If `null` or `undefined`, assignment will be ignored.
    </dd></dl></dd>
    </dl>
-   <br>
+
+<br>
+<br>
+##### Offsets properties :
+<br>
 
 <dl>
 <code><b>Color.hueOffset</b></code>
@@ -682,7 +712,7 @@ If the 1<sup>st</sup> argument is a Color object to set the parent reference, th
 <code><b>Color.alphaOffset</b></code>
 <dd><dl><dd>Get / set the offset applied to the alpha value of the <code>Color</code> parent's (to obtain this <code>Color</code> alpha value).
 
-> If <code>Color</code> don't have a parent, offset will be ignored.
+> If <code>Color</code> don't have a parent, offsets will be ignored.
 
 -  Getter <code>Color.alphaOffset</code> : number | function.
    -  Default value : `0` (no change from parent value).
@@ -694,10 +724,46 @@ If the 1<sup>st</sup> argument is a Color object to set the parent reference, th
    </dl>
 
 <br>
+<br>
+##### Color reference properties :
+<br>
+
+<dl>
+<code><b>Color.ref</b></code>
+<dd><dl><dd>Get / set the parent <code>Color</code> reference (use to get color properties through offsets).
+
+> A Color reference cannot be deleted, only update by a new one.
+
+-  Getter <code>Color.ref</code> : Color.
+   -  Default value : `undefined` ( no parent Color ).
+-  Setter <code>Color.ref = Color</code>.
+   -  If `null` or `undefined`, assignment will be ignored.
+      </dd></dl></dd>
+      </dl>
+   <br>
+   <dl>
+   <code><b>Color.parent</b></code>
+   <dd><dl><dd>A alias for the <code>.ref</code> property.
+
+> A Color reference cannot be deleted, only update by a new one.
+
+-  Getter <code>Color.parent</code> : Color.
+   -  Default value : `undefined` ( no parent Color ).
+-  Setter <code>Color.parent = Color</code>.
+   -  If `null` or `undefined`, assignment will be ignored.
+   </dd></dl></dd>
+   </dl>
+
+<br>
 <h6 align="right"><a href="#top"> back to top ⇧</a></h6>
 <br>
 
 ### Methods :
+
+<br>
+<br>
+
+##### CSS color string export methods :
 
 <br>
 
@@ -742,6 +808,82 @@ mainColor.toHex(); // "#f76e6e"
 
 mainColor.alpha = 50;
 mainColor.toHex(); // "#f76e6e80"
+```
+
+<br>
+<br>
+##### All in one update methods :
+<br>
+
+<dl>
+<dt><code>.set()</code></dt>
+<dd><dl><dd>Act like a <code>new Color()</code> constructor to update a Color with new values without breaking the reference for the child Color like <code>new Color()</code> would.<br>
+Difference with the constructor : if any property in the <code>.set()</code> method is missing, the original will be kept and not set to the default value.</dd></dl></dd>
+</dl>
+
+```js
+const color = new Color({
+	properties: { hue: 180, light: 35 },
+	offsets: { saturation: sat => sat / 2 },
+});
+
+color.set(); // No changes.
+color.set({ hue: 0 }); // Only the hue property will change.
+// All color properties will be set from the CSS string :
+color.set("#ff0000"); // The offsets will remain unchanged.
+```
+
+<br>
+
+<dl>
+<dt><code>.reset()</code></dt>
+<dd><dl><dd>Act like a <code>new Color()</code> constructor to update a Color with new values without breaking the reference for the child Color like <code>new Color()</code> would.<br>
+Every missing property in the <code>.reset()</code> method will be reset to the default value, <b>except the <code>ref</code> ( parent Color ) wich can only be replace by a other <code>Color</code> or remain</b>.</dd></dl></dd>
+</dl>
+
+```js
+const color = new Color({
+	properties: { hue: 180, light: 35 },
+	offsets: { saturation: sat => sat / 2 },
+});
+
+color.reset(); // Back to default values, no offsets.
+// hue property will be 123 :
+color.reset({ hue: 123 }); // All other set to default values.
+// All color properties will be set from the CSS string :
+color.reset("#ff0000"); // The offsets will reset to 0.
+```
+
+<br>
+
+<dl>
+<dt><code>.setColorProperties()</code></dt>
+<dd><dl><dd>Set all color properties ( <code>hue</code>, <code>saturation</code>, <code>light</code>, <code>alpha</code>) at once.<br>
+Only the provided values will be update, if any property in the <code>.setColorProperties()</code> method is missing, the original will be kept and not set to the default value.<br>
+Accept only a object with color properties <code>{ hue?, saturation?, light?, alpha? }</code>.</dd></dl></dd>
+</dl>
+
+```js
+const color = new Color({ hue: 180, light: 35 });
+
+color.setColorProperties(); // No changes.
+color.setColorProperties({ hue: 123 }); // Only hue will change.
+```
+
+<br>
+
+<dl>
+<dt><code>.setColorOffsets()</code></dt>
+<dd><dl><dd>Set all color offsets ( <code>hue</code>, <code>saturation</code>, <code>light</code>, <code>alpha</code>) at once.<br>
+Only the provided values will be update, if any property in the <code>.setColorOffsets()</code> method is missing, the original will be kept and not set to the default value.<br>
+Accept only a object with color offsets <code>{ hue?, saturation?, light?, alpha? }</code>.</dd></dl></dd>
+</dl>
+
+```js
+const darkChild = new Color(parent, { saturation: -20, light: -20 });
+
+darkChild.setColorOffsets(); // No changes.
+darkChild.setColorOffsets({ alpha: -30 }); // Add a alpha offset.
 ```
 
 <br>
